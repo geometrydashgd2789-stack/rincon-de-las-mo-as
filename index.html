@@ -552,6 +552,7 @@ let CONFIG = {
   color_text: '#4A3B3F',
   whatsapp_number: '3008853826',
   nequi_number: '3008853826',
+  nequi_holder_name: 'Norelis Johana Vizcaino Bustamante',
   facebook_url: '',
   city: 'Barranquilla',
   is_open: true,
@@ -861,6 +862,7 @@ function deliveryAndPaymentFieldsHTML(){
     <div class="nequi-box" id="om-nequi-box">
       <div style="font-size:.8rem; font-weight:700;">Nequi</div>
       <div class="nq-number" id="om-nequi-number"></div>
+      <p id="om-nequi-holder" style="margin-bottom:6px;"></p>
       <p>Haz la transferencia y sube aquí una foto del comprobante.</p>
       <button type="button" class="proof-upload-btn" id="om-proof-btn">📎 Subir comprobante</button>
       <input type="file" id="om-proof-input" accept="image/*" style="display:none">
@@ -879,6 +881,9 @@ function wireDeliveryAndPaymentFields(){
   const advanceChk = document.getElementById('om-advance');
   const nequiBox = document.getElementById('om-nequi-box');
   document.getElementById('om-nequi-number').textContent = CONFIG.nequi_number || '—';
+  document.getElementById('om-nequi-holder').textContent = CONFIG.nequi_holder_name
+    ? `A nombre de: ${CONFIG.nequi_holder_name}`
+    : '';
   advanceChk.onchange = () => {
     nequiBox.classList.toggle('show', advanceChk.checked);
   };
