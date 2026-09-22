@@ -217,6 +217,46 @@
   .toast.show{opacity:1;}
 
   .empty-hint{text-align:center; padding:40px 20px; opacity:.55; font-style:italic; font-family:'Fraunces',serif;}
+
+  /* ---- Pedidos ---- */
+  .order-card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:14px; margin-bottom:10px;
+  }
+  .order-card .oc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .order-card .oc-product{font-weight:700; font-size:.95rem;}
+  .order-card .oc-meta{font-size:.8rem; opacity:.65; margin-top:3px;}
+  .order-card .oc-note{font-size:.82rem; margin-top:8px; background:var(--bg); padding:8px 10px; border-radius:8px;}
+  .order-card .oc-time{font-size:.72rem; opacity:.5; margin-top:8px;}
+  .status-select{
+    padding:6px 10px; border-radius:8px; border:1.5px solid var(--line);
+    font-size:.78rem; font-weight:700; background:#fff; color:var(--text);
+  }
+  .status-select.nuevo{border-color:#C97B93; color:#C97B93;}
+  .status-select.confirmado{border-color:#D9A441; color:#D9A441;}
+  .status-select.entregado{border-color:var(--ok); color:var(--ok);}
+  .status-select.cancelado{border-color:var(--danger); color:var(--danger);}
+
+  /* ---- Toggle abierto/cerrado ---- */
+  .open-toggle-row{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px 16px; margin-bottom:16px;
+  }
+  .open-toggle-row .otr-label{font-weight:700; font-size:.92rem;}
+  .otr-sub{font-size:.78rem; opacity:.6; margin-top:2px;}
+  .switch{position:relative; width:48px; height:28px; flex:none;}
+  .switch input{opacity:0; width:0; height:0;}
+  .switch .slider{
+    position:absolute; cursor:pointer; inset:0;
+    background:#e8dede; border-radius:999px; transition:.2s;
+  }
+  .switch .slider::before{
+    content:""; position:absolute; width:22px; height:22px; left:3px; top:3px;
+    background:#fff; border-radius:50%; transition:.2s;
+  }
+  .switch input:checked + .slider{background:var(--ok);}
+  .switch input:checked + .slider::before{transform:translateX(20px);}
 </style>
 </head>
 <body>
@@ -254,6 +294,7 @@
 
   <nav class="tabs">
     <button class="tab-btn active" data-panel="panel-products">Productos</button>
+    <button class="tab-btn" data-panel="panel-orders">Pedidos <span id="orders-badge" style="display:none;"></span></button>
     <button class="tab-btn" data-panel="panel-categories">Categorías</button>
     <button class="tab-btn" data-panel="panel-theme">Diseño</button>
   </nav>
@@ -266,6 +307,21 @@
         <button class="btn small" id="new-product-btn">+ Nuevo</button>
       </div>
       <div id="product-list"></div>
+    </section>
+
+    <!-- ---- PEDIDOS ---- -->
+    <section class="panel" id="panel-orders">
+      <div class="section-head">
+        <h2>Pedidos</h2>
+        <select id="orders-filter" style="padding:8px 12px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:.85rem;">
+          <option value="all">Todos</option>
+          <option value="nuevo" selected>Nuevos</option>
+          <option value="confirmado">Confirmados</option>
+          <option value="entregado">Entregados</option>
+          <option value="cancelado">Cancelados</option>
+        </select>
+      </div>
+      <div id="order-list"></div>
     </section>
 
     <!-- ---- CATEGORÍAS ---- -->
@@ -281,6 +337,21 @@
     <!-- ---- DISEÑO / TEMA ---- -->
     <section class="panel" id="panel-theme">
       <div class="section-head"><h2>Diseño de la tienda</h2></div>
+
+      <div class="open-toggle-row">
+        <div>
+          <div class="otr-label" id="otr-label">Tienda abierta</div>
+          <div class="otr-sub" id="otr-sub">Los clientes pueden hacer pedidos</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="theme-is-open" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="field" id="closed-message-field" style="display:none;">
+        <label>Mensaje mientras está cerrada</label>
+        <input type="text" id="theme-closed-message" placeholder="Ej: Volvemos el lunes">
+      </div>
 
       <div class="field">
         <label>Nombre del negocio</label>
@@ -443,6 +514,7 @@ async function onLoggedIn(user){
   await loadCategories();
   await loadProducts();
   await loadTheme();
+  await loadOrders();
 }
 
 async function checkSession(){
@@ -749,6 +821,73 @@ document.getElementById('pf-save').onclick = async () => {
   await loadProducts();
 };
 
+// ---------------- PEDIDOS ----------------
+let ORDERS = [];
+
+async function loadOrders(){
+  const { data } = await sb.from('orders').select('*').order('created_at', { ascending:false });
+  ORDERS = data || [];
+  updateOrdersBadge();
+  renderOrders();
+}
+
+function updateOrdersBadge(){
+  const nuevos = ORDERS.filter(o => o.status === 'nuevo').length;
+  const badge = document.getElementById('orders-badge');
+  if(nuevos > 0){
+    badge.style.display = 'inline-block';
+    badge.style.cssText = 'display:inline-block;background:var(--accent);color:#fff;border-radius:999px;padding:1px 7px;font-size:.7rem;margin-left:4px;';
+    badge.textContent = nuevos;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderOrders(){
+  const filter = document.getElementById('orders-filter').value;
+  const list = document.getElementById('order-list');
+  const filtered = filter === 'all' ? ORDERS : ORDERS.filter(o => o.status === filter);
+
+  if(filtered.length === 0){
+    list.innerHTML = '<div class="empty-hint">No hay pedidos en esta categoría 🌸</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  filtered.forEach(o => {
+    const card = document.createElement('div');
+    card.className = 'order-card';
+    const fecha = new Date(o.created_at).toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' });
+    card.innerHTML = `
+      <div class="oc-top">
+        <div>
+          <div class="oc-product">${escapeHtml(o.product_name)} ${o.quantity > 1 ? `× ${o.quantity}` : ''}</div>
+          <div class="oc-meta">${escapeHtml(o.customer_name)} · $${Number(o.product_price * o.quantity).toLocaleString('es-CO')}</div>
+        </div>
+        <select class="status-select ${o.status}" data-id="${o.id}">
+          <option value="nuevo" ${o.status==='nuevo'?'selected':''}>Nuevo</option>
+          <option value="confirmado" ${o.status==='confirmado'?'selected':''}>Confirmado</option>
+          <option value="entregado" ${o.status==='entregado'?'selected':''}>Entregado</option>
+          <option value="cancelado" ${o.status==='cancelado'?'selected':''}>Cancelado</option>
+        </select>
+      </div>
+      ${o.note ? `<div class="oc-note">${escapeHtml(o.note)}</div>` : ''}
+      <div class="oc-time">${fecha}</div>
+    `;
+    list.appendChild(card);
+  });
+
+  list.querySelectorAll('.status-select').forEach(sel => {
+    sel.onchange = async () => {
+      await sb.from('orders').update({ status: sel.value }).eq('id', sel.dataset.id);
+      toast('Pedido actualizado');
+      await loadOrders();
+    };
+  });
+}
+
+document.getElementById('orders-filter').onchange = renderOrders;
+
 // ---------------- THEME ----------------
 async function loadTheme(){
   const { data } = await sb.from('site_config').select('*').eq('id',1).single();
@@ -762,8 +901,21 @@ async function loadTheme(){
   document.getElementById('theme-primary').value = data.color_primary;
   document.getElementById('theme-accent').value = data.color_accent;
   document.getElementById('theme-text').value = data.color_text;
+  document.getElementById('theme-is-open').checked = data.is_open !== false;
+  document.getElementById('theme-closed-message').value = data.closed_message || '';
+  updateOpenToggleUI();
   updateThemePreview();
 }
+
+function updateOpenToggleUI(){
+  const isOpen = document.getElementById('theme-is-open').checked;
+  document.getElementById('otr-label').textContent = isOpen ? 'Tienda abierta' : 'Tienda cerrada';
+  document.getElementById('otr-sub').textContent = isOpen
+    ? 'Los clientes pueden hacer pedidos'
+    : 'Se muestra un aviso en la tienda';
+  document.getElementById('closed-message-field').style.display = isOpen ? 'none' : 'block';
+}
+document.getElementById('theme-is-open').addEventListener('change', updateOpenToggleUI);
 
 ['theme-bg','theme-primary','theme-accent','theme-text','theme-name','theme-tagline'].forEach(id => {
   document.getElementById(id).addEventListener('input', updateThemePreview);
@@ -796,7 +948,9 @@ document.getElementById('save-theme-btn').onclick = async () => {
     color_bg: document.getElementById('theme-bg').value,
     color_primary: document.getElementById('theme-primary').value,
     color_accent: document.getElementById('theme-accent').value,
-    color_text: document.getElementById('theme-text').value
+    color_text: document.getElementById('theme-text').value,
+    is_open: document.getElementById('theme-is-open').checked,
+    closed_message: document.getElementById('theme-closed-message').value.trim()
   };
   await sb.from('site_config').update(payload).eq('id', 1);
   toast('Diseño guardado — ya se ve reflejado en la tienda');
