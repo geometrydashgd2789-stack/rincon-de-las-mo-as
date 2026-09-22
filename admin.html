@@ -11,7 +11,7 @@
 <style>
   :root{
     --bg:#FDF8F3; --primary:#F0C4CE; --accent:#C97B93; --text:#4A3B3F;
-    --card:#FFFFFF; --line:#F0DDE2; --danger:#D2555A; --ok:#6FA98A;
+    --card:#FFFFFF; --line:#F0DDE2; --danger:#D2555A; --ok:#6FA98A; --warn:#D9A441;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{
@@ -130,6 +130,7 @@
   }
   .tag.combo{background:var(--primary); color:var(--accent);}
   .tag.out{background:#eee; color:#999;}
+  .tag.advance{background:#E6F4EC; color:var(--ok);}
 
   /* ---- Category chips w/ drag ---- */
   .cat-list{display:flex; flex-direction:column; gap:8px; margin-bottom:20px;}
@@ -208,6 +209,10 @@
     background:var(--pv-accent,#000); color:#fff; font-size:.82rem; font-weight:700;
   }
 
+  .section-sub{
+    font-size:1.05rem; color:var(--accent); margin:22px 0 12px;
+  }
+
   .toast{
     position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
     background:var(--text); color:#fff; padding:12px 20px; border-radius:12px;
@@ -218,7 +223,7 @@
 
   .empty-hint{text-align:center; padding:40px 20px; opacity:.55; font-style:italic; font-family:'Fraunces',serif;}
 
-  /* ---- Pedidos ---- */
+  /* ---- Pedidos / Encargos ---- */
   .order-card{
     background:var(--card); border:1px solid var(--line); border-radius:16px;
     padding:14px; margin-bottom:10px;
@@ -226,14 +231,24 @@
   .order-card .oc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
   .order-card .oc-product{font-weight:700; font-size:.95rem;}
   .order-card .oc-meta{font-size:.8rem; opacity:.65; margin-top:3px;}
+  .order-card .oc-detail-row{
+    font-size:.82rem; margin-top:8px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  }
+  .order-card .oc-detail-row .icon{opacity:.6;}
   .order-card .oc-note{font-size:.82rem; margin-top:8px; background:var(--bg); padding:8px 10px; border-radius:8px;}
   .order-card .oc-time{font-size:.72rem; opacity:.5; margin-top:8px;}
+  .order-card .oc-proof-link{
+    display:inline-flex; align-items:center; gap:5px; margin-top:8px;
+    font-size:.8rem; font-weight:700; color:var(--ok); text-decoration:none;
+  }
   .status-select{
     padding:6px 10px; border-radius:8px; border:1.5px solid var(--line);
     font-size:.78rem; font-weight:700; background:#fff; color:var(--text);
   }
   .status-select.nuevo{border-color:#C97B93; color:#C97B93;}
-  .status-select.confirmado{border-color:#D9A441; color:#D9A441;}
+  .status-select.confirmado{border-color:var(--warn); color:var(--warn);}
+  .status-select.en_preparacion{border-color:#9B7FC7; color:#9B7FC7;}
+  .status-select.en_camino{border-color:#4AA3D9; color:#4AA3D9;}
   .status-select.entregado{border-color:var(--ok); color:var(--ok);}
   .status-select.cancelado{border-color:var(--danger); color:var(--danger);}
 
@@ -295,6 +310,7 @@
   <nav class="tabs">
     <button class="tab-btn active" data-panel="panel-products">Productos</button>
     <button class="tab-btn" data-panel="panel-orders">Pedidos <span id="orders-badge" style="display:none;"></span></button>
+    <button class="tab-btn" data-panel="panel-custom-orders">Encargos <span id="custom-orders-badge" style="display:none;"></span></button>
     <button class="tab-btn" data-panel="panel-categories">Categorías</button>
     <button class="tab-btn" data-panel="panel-theme">Diseño</button>
   </nav>
@@ -317,11 +333,30 @@
           <option value="all">Todos</option>
           <option value="nuevo" selected>Nuevos</option>
           <option value="confirmado">Confirmados</option>
+          <option value="en_preparacion">En preparación</option>
+          <option value="en_camino">En camino</option>
           <option value="entregado">Entregados</option>
           <option value="cancelado">Cancelados</option>
         </select>
       </div>
       <div id="order-list"></div>
+    </section>
+
+    <!-- ---- ENCARGOS ---- -->
+    <section class="panel" id="panel-custom-orders">
+      <div class="section-head">
+        <h2>Encargos</h2>
+        <select id="custom-orders-filter" style="padding:8px 12px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:.85rem;">
+          <option value="all">Todos</option>
+          <option value="nuevo" selected>Nuevos</option>
+          <option value="confirmado">Confirmados</option>
+          <option value="en_preparacion">En preparación</option>
+          <option value="en_camino">En camino</option>
+          <option value="entregado">Entregados</option>
+          <option value="cancelado">Cancelados</option>
+        </select>
+      </div>
+      <div id="custom-order-list"></div>
     </section>
 
     <!-- ---- CATEGORÍAS ---- -->
@@ -374,7 +409,20 @@
         <input type="text" id="theme-city">
       </div>
 
-      <h3 style="margin:22px 0 12px; font-size:1.05rem; color:var(--accent);">Colores</h3>
+      <h3 class="section-sub">Pago adelantado (Nequi)</h3>
+      <div class="field">
+        <label>Número de Nequi</label>
+        <input type="text" id="theme-nequi-number" placeholder="3001234567">
+      </div>
+      <div class="field">
+        <label>Nombre a mostrar como titular</label>
+        <input type="text" id="theme-nequi-holder" placeholder="Nombre completo del titular">
+      </div>
+      <p style="font-size:.78rem; opacity:.6; margin-top:-6px; margin-bottom:6px;">
+        Esto se muestra a los clientes cuando eligen pagar por adelantado, para que confirmen que la cuenta es correcta.
+      </p>
+
+      <h3 class="section-sub">Colores</h3>
       <div class="swatch-field">
         <input type="color" id="theme-bg">
         <div class="swatch-label"><div class="name">Fondo</div><div class="hex" id="hex-bg">—</div></div>
@@ -473,11 +521,37 @@ if(!configured){
   document.getElementById('config-warning').style.display = 'block';
 }
 
+const STATUS_LABELS = {
+  nuevo: 'Nuevo',
+  confirmado: 'Confirmado',
+  en_preparacion: 'En preparación',
+  en_camino: 'En camino',
+  entregado: 'Entregado',
+  cancelado: 'Cancelado'
+};
+
+const DELIVERY_LABELS = {
+  recoge: '🚶 Lo recoge el cliente',
+  domicilio: '🚚 Domicilio'
+};
+
 function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function escapeHtml(s){
+  const div = document.createElement('div');
+  div.textContent = s || '';
+  return div.innerHTML;
+}
+
+function statusOptionsHTML(current){
+  return Object.entries(STATUS_LABELS).map(([value, label]) =>
+    `<option value="${value}" ${current === value ? 'selected' : ''}>${label}</option>`
+  ).join('');
 }
 
 // ---------------- AUTH ----------------
@@ -515,6 +589,7 @@ async function onLoggedIn(user){
   await loadProducts();
   await loadTheme();
   await loadOrders();
+  await loadCustomOrders();
 }
 
 async function checkSession(){
@@ -843,6 +918,22 @@ function updateOrdersBadge(){
   }
 }
 
+function orderDetailRowsHTML(o){
+  const rows = [];
+  if(o.address){
+    rows.push(`<div class="oc-detail-row"><span class="icon">📍</span> ${escapeHtml(o.address)}</div>`);
+  }
+  if(o.delivery_method){
+    rows.push(`<div class="oc-detail-row"><span>${DELIVERY_LABELS[o.delivery_method] || o.delivery_method}</span></div>`);
+  }
+  if(o.advance_payment){
+    rows.push(`<div class="oc-detail-row"><span class="tag advance">💳 Pago adelantado</span>${
+      o.payment_proof_url ? ` <a class="oc-proof-link" href="${o.payment_proof_url}" target="_blank">Ver comprobante</a>` : ' <span style="opacity:.6;">(sin comprobante subido)</span>'
+    }</div>`);
+  }
+  return rows.join('');
+}
+
 function renderOrders(){
   const filter = document.getElementById('orders-filter').value;
   const list = document.getElementById('order-list');
@@ -865,12 +956,10 @@ function renderOrders(){
           <div class="oc-meta">${escapeHtml(o.customer_name)} · $${Number(o.product_price * o.quantity).toLocaleString('es-CO')}</div>
         </div>
         <select class="status-select ${o.status}" data-id="${o.id}">
-          <option value="nuevo" ${o.status==='nuevo'?'selected':''}>Nuevo</option>
-          <option value="confirmado" ${o.status==='confirmado'?'selected':''}>Confirmado</option>
-          <option value="entregado" ${o.status==='entregado'?'selected':''}>Entregado</option>
-          <option value="cancelado" ${o.status==='cancelado'?'selected':''}>Cancelado</option>
+          ${statusOptionsHTML(o.status)}
         </select>
       </div>
+      ${orderDetailRowsHTML(o)}
       ${o.note ? `<div class="oc-note">${escapeHtml(o.note)}</div>` : ''}
       <div class="oc-time">${fecha}</div>
     `;
@@ -888,6 +977,79 @@ function renderOrders(){
 
 document.getElementById('orders-filter').onchange = renderOrders;
 
+// ---------------- ENCARGOS ----------------
+let CUSTOM_ORDERS = [];
+
+async function loadCustomOrders(){
+  const { data } = await sb.from('custom_orders').select('*').order('created_at', { ascending:false });
+  CUSTOM_ORDERS = data || [];
+  updateCustomOrdersBadge();
+  renderCustomOrders();
+}
+
+function updateCustomOrdersBadge(){
+  const nuevos = CUSTOM_ORDERS.filter(o => o.status === 'nuevo').length;
+  const badge = document.getElementById('custom-orders-badge');
+  if(nuevos > 0){
+    badge.style.display = 'inline-block';
+    badge.style.cssText = 'display:inline-block;background:var(--accent);color:#fff;border-radius:999px;padding:1px 7px;font-size:.7rem;margin-left:4px;';
+    badge.textContent = nuevos;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function formatDateRange(from, to){
+  const opts = { day:'numeric', month:'short' };
+  const fromStr = new Date(from + 'T00:00:00').toLocaleDateString('es-CO', opts);
+  const toStr = new Date(to + 'T00:00:00').toLocaleDateString('es-CO', opts);
+  return fromStr === toStr ? fromStr : `${fromStr} – ${toStr}`;
+}
+
+function renderCustomOrders(){
+  const filter = document.getElementById('custom-orders-filter').value;
+  const list = document.getElementById('custom-order-list');
+  const filtered = filter === 'all' ? CUSTOM_ORDERS : CUSTOM_ORDERS.filter(o => o.status === filter);
+
+  if(filtered.length === 0){
+    list.innerHTML = '<div class="empty-hint">No hay encargos en esta categoría ✨</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  filtered.forEach(o => {
+    const card = document.createElement('div');
+    card.className = 'order-card';
+    const fecha = new Date(o.created_at).toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' });
+    card.innerHTML = `
+      <div class="oc-top">
+        <div>
+          <div class="oc-product">✨ ${escapeHtml(o.customer_name)}</div>
+          <div class="oc-meta">Lo necesita: ${formatDateRange(o.date_from, o.date_to)}</div>
+        </div>
+        <select class="status-select ${o.status}" data-id="${o.id}">
+          ${statusOptionsHTML(o.status)}
+        </select>
+      </div>
+      <div class="oc-note" style="margin-top:8px;">${escapeHtml(o.description)}</div>
+      ${orderDetailRowsHTML(o)}
+      ${o.note ? `<div class="oc-note">${escapeHtml(o.note)}</div>` : ''}
+      <div class="oc-time">${fecha}</div>
+    `;
+    list.appendChild(card);
+  });
+
+  list.querySelectorAll('.status-select').forEach(sel => {
+    sel.onchange = async () => {
+      await sb.from('custom_orders').update({ status: sel.value }).eq('id', sel.dataset.id);
+      toast('Encargo actualizado');
+      await loadCustomOrders();
+    };
+  });
+}
+
+document.getElementById('custom-orders-filter').onchange = renderCustomOrders;
+
 // ---------------- THEME ----------------
 async function loadTheme(){
   const { data } = await sb.from('site_config').select('*').eq('id',1).single();
@@ -897,6 +1059,8 @@ async function loadTheme(){
   document.getElementById('theme-whatsapp').value = data.whatsapp_number;
   document.getElementById('theme-facebook').value = data.facebook_url || '';
   document.getElementById('theme-city').value = data.city;
+  document.getElementById('theme-nequi-number').value = data.nequi_number || '';
+  document.getElementById('theme-nequi-holder').value = data.nequi_holder_name || '';
   document.getElementById('theme-bg').value = data.color_bg;
   document.getElementById('theme-primary').value = data.color_primary;
   document.getElementById('theme-accent').value = data.color_accent;
@@ -945,6 +1109,8 @@ document.getElementById('save-theme-btn').onclick = async () => {
     whatsapp_number: document.getElementById('theme-whatsapp').value.trim(),
     facebook_url: document.getElementById('theme-facebook').value.trim(),
     city: document.getElementById('theme-city').value.trim(),
+    nequi_number: document.getElementById('theme-nequi-number').value.trim(),
+    nequi_holder_name: document.getElementById('theme-nequi-holder').value.trim(),
     color_bg: document.getElementById('theme-bg').value,
     color_primary: document.getElementById('theme-primary').value,
     color_accent: document.getElementById('theme-accent').value,
@@ -955,12 +1121,6 @@ document.getElementById('save-theme-btn').onclick = async () => {
   await sb.from('site_config').update(payload).eq('id', 1);
   toast('Diseño guardado — ya se ve reflejado en la tienda');
 };
-
-function escapeHtml(s){
-  const div = document.createElement('div');
-  div.textContent = s || '';
-  return div.innerHTML;
-}
 </script>
 </body>
 </html>
