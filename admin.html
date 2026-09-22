@@ -123,6 +123,7 @@
     background:#fff; cursor:pointer; font-size:.95rem; display:flex; align-items:center; justify-content:center;
   }
   .icon-btn.danger{border-color:var(--danger); color:var(--danger);}
+  .icon-btn.share{border-color:#4267B2; color:#4267B2;}
   .tag{
     display:inline-block; font-size:.68rem; font-weight:800; padding:2px 8px;
     border-radius:999px; margin-right:4px;
@@ -389,6 +390,9 @@
 // ============================================================
 const SUPABASE_URL = 'https://djzqfnhbhwmdiftfmcsq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_qjYeH9YAwmZAd4rCoE_2xg_cg0yhUb5';
+
+// URL pública de la tienda (para generar enlaces de compartir)
+const STORE_URL = 'https://geometrydashgd2789-stack.github.io/rincon-de-las-mo-as/';
 // ============================================================
 
 const configured = SUPABASE_URL.startsWith('http');
@@ -595,6 +599,7 @@ function renderProductList(){
         </div>
       </div>
       <div class="actions">
+        <button class="icon-btn share" data-share="${p.id}" title="Compartir en Facebook">📣</button>
         <button class="icon-btn" data-edit="${p.id}">✎</button>
         <button class="icon-btn danger" data-del="${p.id}">🗑</button>
       </div>
@@ -604,6 +609,9 @@ function renderProductList(){
 
   list.querySelectorAll('[data-edit]').forEach(btn => {
     btn.onclick = () => openProductModal(PRODUCTS.find(p => p.id === btn.dataset.edit));
+  });
+  list.querySelectorAll('[data-share]').forEach(btn => {
+    btn.onclick = () => shareProductToFacebook(PRODUCTS.find(p => p.id === btn.dataset.share));
   });
   list.querySelectorAll('[data-del]').forEach(btn => {
     btn.onclick = async () => {
@@ -616,6 +624,26 @@ function renderProductList(){
 }
 
 document.getElementById('new-product-btn').onclick = () => openProductModal(null);
+
+function productLink(p){
+  return `${STORE_URL}?producto=${p.id}`;
+}
+
+async function shareProductToFacebook(p){
+  if(!p) return;
+  const link = productLink(p);
+  const mensaje = `🌸 Nuevo en Rincón de las Moñas: ${p.name} — $${Number(p.price).toLocaleString('es-CO')}. ¡Escríbenos! ${link}`;
+
+  try{
+    await navigator.clipboard.writeText(mensaje);
+    toast('Mensaje copiado — pégalo en Facebook');
+  }catch(e){
+    // Si el navegador no permite copiar automático, igual seguimos abriendo Facebook
+  }
+
+  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`;
+  window.open(fbShareUrl, '_blank');
+}
 
 function openProductModal(product){
   document.getElementById('product-modal-title').textContent = product ? 'Editar producto' : 'Nuevo producto';
