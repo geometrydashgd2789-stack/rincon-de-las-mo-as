@@ -284,6 +284,87 @@
   }
   .spotlight-body .wa-btn{max-width:260px; margin-top:10px;}
 
+  /* ---------- Aviso tienda cerrada ---------- */
+  .closed-banner{
+    max-width:1000px;
+    margin:0 auto 24px;
+    padding:0 20px;
+  }
+  .closed-banner-inner{
+    background:#FFF3E0;
+    color:#8A5A00;
+    border-radius:14px;
+    padding:14px 18px;
+    font-size:.88rem;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  /* ---------- Formulario de pedido ---------- */
+  .order-btn{
+    margin-top:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    background:#fff;
+    color:var(--accent);
+    border:1.5px solid var(--accent);
+    border-radius:12px;
+    padding:8px;
+    font-weight:700;
+    font-size:.82rem;
+    cursor:pointer;
+    width:100%;
+  }
+  .order-modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(74,59,63,.6);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:90;
+    padding:0;
+  }
+  .order-modal-overlay.open{display:flex;}
+  .order-modal{
+    background:var(--bg);
+    width:100%;
+    max-width:480px;
+    border-radius:22px 22px 0 0;
+    padding:22px 20px 26px;
+    max-height:88vh;
+    overflow-y:auto;
+  }
+  @media(min-width:560px){
+    .order-modal-overlay{align-items:center;}
+    .order-modal{border-radius:22px;}
+  }
+  .order-modal h3{color:var(--accent); font-size:1.15rem; margin-bottom:4px;}
+  .order-modal .om-product{font-size:.85rem; opacity:.7; margin-bottom:16px;}
+  .order-modal label{display:block; font-size:.8rem; font-weight:700; margin-bottom:5px; opacity:.75;}
+  .order-modal .field{margin-bottom:12px;}
+  .order-modal input, .order-modal textarea{
+    width:100%; padding:10px 12px;
+    border:1.5px solid var(--line); border-radius:10px;
+    font-size:.92rem; background:#fff; color:var(--text);
+    font-family:inherit;
+  }
+  .order-modal textarea{min-height:60px; resize:vertical;}
+  .order-modal .om-actions{display:flex; gap:10px; margin-top:16px;}
+  .order-modal .om-btn{
+    flex:1; padding:11px; border-radius:12px; border:none;
+    font-weight:700; font-size:.9rem; cursor:pointer;
+  }
+  .order-modal .om-cancel{background:#fff; border:1.5px solid var(--line); color:var(--text);}
+  .order-modal .om-send{background:var(--accent); color:#fff;}
+  .order-confirm{
+    text-align:center; padding:20px 10px;
+  }
+  .order-confirm .big-check{font-size:2.4rem; margin-bottom:8px;}
+
   /* ---------- Footer ---------- */
   footer{
     max-width:1000px;
@@ -354,6 +435,12 @@
 
 <nav class="cat-nav" id="cat-nav"></nav>
 
+<div class="closed-banner" id="closed-banner" style="display:none;">
+  <div class="closed-banner-inner">
+    🌙 <span id="closed-message"></span>
+  </div>
+</div>
+
 <div class="spotlight-wrap" id="spotlight-wrap" style="display:none;">
   <div class="spotlight-label">✨ Te comparten esto</div>
   <div class="spotlight-card" id="spotlight-card"></div>
@@ -372,6 +459,10 @@
 <div class="lightbox" id="lightbox">
   <button class="lightbox-close" id="lightbox-close">✕</button>
   <img id="lightbox-img" src="" alt="">
+</div>
+
+<div class="order-modal-overlay" id="order-modal-overlay">
+  <div class="order-modal" id="order-modal-content"></div>
 </div>
 
 <script>
@@ -395,7 +486,9 @@ let CONFIG = {
   color_text: '#4A3B3F',
   whatsapp_number: '3008853826',
   facebook_url: '',
-  city: 'Barranquilla'
+  city: 'Barranquilla',
+  is_open: true,
+  closed_message: 'Por ahora no estamos recibiendo pedidos nuevos. ¡Vuelve pronto!'
 };
 
 // ---- Datos de ejemplo (se usan si Supabase no está configurado aún) ----
@@ -444,6 +537,14 @@ function applyConfig(cfg){
     a.target = '_blank';
     a.textContent = 'Facebook';
     socials.appendChild(a);
+  }
+
+  const banner = document.getElementById('closed-banner');
+  if(!CONFIG.is_open){
+    document.getElementById('closed-message').textContent = CONFIG.closed_message;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
   }
 }
 
@@ -518,10 +619,14 @@ function renderSpotlight(){
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.48 1.32 4.99L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.06c-1.5 0-2.97-.4-4.25-1.16l-.3-.18-3.15.83.84-3.07-.2-.32a8.06 8.06 0 0 1-1.24-4.25c0-4.46 3.63-8.09 8.1-8.09 2.16 0 4.2.85 5.72 2.37a8.03 8.03 0 0 1 2.37 5.72c0 4.47-3.63 8.15-8.09 8.15z"/></svg>
         ${p.in_stock ? 'Pedir por WhatsApp' : 'Agotado por ahora'}
       </a>
+      ${p.in_stock ? `<button class="order-btn" id="spotlight-order-btn" style="max-width:260px;">Hacer pedido</button>` : ''}
     </div>
   `;
 
   wrap.style.display = 'block';
+
+  const spotlightOrderBtn = document.getElementById('spotlight-order-btn');
+  if(spotlightOrderBtn) spotlightOrderBtn.onclick = () => openOrderModal(p);
 
   // Llevar a esa categoría y hacer scroll suave hacia el destacado
   if(p.category_id) activeCategory = p.category_id;
@@ -607,6 +712,15 @@ function renderCard(p){
   `;
 
   body.appendChild(btn);
+
+  if(p.in_stock){
+    const orderBtn = document.createElement('button');
+    orderBtn.className = 'order-btn';
+    orderBtn.textContent = 'Hacer pedido';
+    orderBtn.onclick = () => openOrderModal(p);
+    body.appendChild(orderBtn);
+  }
+
   card.appendChild(photo);
   card.appendChild(body);
   return card;
@@ -655,6 +769,85 @@ function loadDemo(){
   ALL_PRODUCTS = DEMO_PRODUCTS;
   refreshCatalogView();
 }
+
+// ---------------- Formulario de pedido ----------------
+function openOrderModal(p){
+  const overlay = document.getElementById('order-modal-overlay');
+  const content = document.getElementById('order-modal-content');
+  content.innerHTML = `
+    <h3>Hacer pedido</h3>
+    <div class="om-product">${escapeHtml(p.name)} · ${money(p.price)}</div>
+    <div class="field">
+      <label>Tu nombre</label>
+      <input type="text" id="om-name" placeholder="¿Cómo te llamas?">
+    </div>
+    <div class="field">
+      <label>Cantidad</label>
+      <input type="number" id="om-qty" value="1" min="1">
+    </div>
+    <div class="field">
+      <label>Nota (opcional)</label>
+      <textarea id="om-note" placeholder="Ej: color, talla, para cuándo lo necesitas..."></textarea>
+    </div>
+    <div class="om-actions">
+      <button class="om-btn om-cancel" id="om-cancel">Cancelar</button>
+      <button class="om-btn om-send" id="om-send">Enviar pedido</button>
+    </div>
+  `;
+  overlay.classList.add('open');
+
+  document.getElementById('om-cancel').onclick = () => overlay.classList.remove('open');
+
+  document.getElementById('om-send').onclick = async () => {
+    const name = document.getElementById('om-name').value.trim();
+    const qty = Number(document.getElementById('om-qty').value) || 1;
+    const note = document.getElementById('om-note').value.trim();
+
+    if(!name){
+      alert('Por favor escribe tu nombre.');
+      return;
+    }
+
+    const sendBtn = document.getElementById('om-send');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Enviando…';
+
+    if(sb){
+      try{
+        await sb.from('orders').insert({
+          product_id: p.id,
+          product_name: p.name,
+          product_price: p.price,
+          customer_name: name,
+          quantity: qty,
+          note: note
+        });
+      }catch(e){
+        console.error('Error guardando pedido:', e);
+      }
+    }
+
+    // Mensaje de confirmación + enlace a WhatsApp para cerrar el pedido
+    content.innerHTML = `
+      <div class="order-confirm">
+        <div class="big-check">🌸</div>
+        <h3>¡Pedido recibido!</h3>
+        <p style="font-size:.9rem; opacity:.75; margin-top:6px;">Ahora escríbenos por WhatsApp para confirmar los detalles.</p>
+        <div class="om-actions" style="margin-top:18px;">
+          <button class="om-btn om-cancel" id="om-close">Cerrar</button>
+          <a class="om-btn om-send" style="text-decoration:none; display:flex; align-items:center; justify-content:center;"
+             href="${waLink(CONFIG.whatsapp_number, `Hola 🌸 Acabo de hacer un pedido de "${p.name}" (x${qty}) a nombre de ${name}. ${note ? 'Nota: ' + note : ''}`)}"
+             target="_blank">Ir a WhatsApp</a>
+        </div>
+      </div>
+    `;
+    document.getElementById('om-close').onclick = () => overlay.classList.remove('open');
+  };
+}
+
+document.getElementById('order-modal-overlay').onclick = (e) => {
+  if(e.target.id === 'order-modal-overlay') e.target.classList.remove('open');
+};
 
 async function init(){
   if(sb){
