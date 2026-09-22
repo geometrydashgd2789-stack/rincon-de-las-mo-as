@@ -77,6 +77,21 @@
     margin:22px auto 0;
     border-radius:2px;
   }
+  .hero .custom-order-btn{
+    margin-top:24px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#fff;
+    color:var(--accent);
+    border:1.5px solid var(--accent);
+    border-radius:999px;
+    padding:11px 22px;
+    font-weight:700;
+    font-size:.9rem;
+    cursor:pointer;
+  }
+  .hero .custom-order-btn:active{opacity:.8;}
 
   /* ---------- Nav de categorías ---------- */
   .cat-nav{
@@ -302,7 +317,7 @@
     gap:10px;
   }
 
-  /* ---------- Formulario de pedido ---------- */
+  /* ---------- Formulario de pedido / encargo ---------- */
   .order-btn{
     margin-top:6px;
     display:flex;
@@ -335,7 +350,7 @@
     max-width:480px;
     border-radius:22px 22px 0 0;
     padding:22px 20px 26px;
-    max-height:88vh;
+    max-height:90vh;
     overflow-y:auto;
   }
   @media(min-width:560px){
@@ -346,13 +361,14 @@
   .order-modal .om-product{font-size:.85rem; opacity:.7; margin-bottom:16px;}
   .order-modal label{display:block; font-size:.8rem; font-weight:700; margin-bottom:5px; opacity:.75;}
   .order-modal .field{margin-bottom:12px;}
-  .order-modal input, .order-modal textarea{
+  .order-modal input, .order-modal textarea, .order-modal select{
     width:100%; padding:10px 12px;
     border:1.5px solid var(--line); border-radius:10px;
     font-size:.92rem; background:#fff; color:var(--text);
     font-family:inherit;
   }
   .order-modal textarea{min-height:60px; resize:vertical;}
+  .order-modal .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   .order-modal .om-actions{display:flex; gap:10px; margin-top:16px;}
   .order-modal .om-btn{
     flex:1; padding:11px; border-radius:12px; border:none;
@@ -360,10 +376,59 @@
   }
   .order-modal .om-cancel{background:#fff; border:1.5px solid var(--line); color:var(--text);}
   .order-modal .om-send{background:var(--accent); color:#fff;}
+  .order-modal .om-send:disabled{opacity:.6; pointer-events:none;}
   .order-confirm{
     text-align:center; padding:20px 10px;
   }
   .order-confirm .big-check{font-size:2.4rem; margin-bottom:8px;}
+
+  .delivery-note{
+    background:var(--primary);
+    color:var(--accent);
+    border-radius:10px;
+    padding:9px 12px;
+    font-size:.78rem;
+    font-weight:600;
+    margin:-2px 0 12px;
+    display:none;
+  }
+  .delivery-note.show{display:block;}
+
+  .checkbox-field{
+    display:flex; align-items:center; gap:9px;
+    margin-bottom:12px;
+  }
+  .checkbox-field input{width:auto; flex:none;}
+  .checkbox-field label{margin:0; font-weight:700; font-size:.85rem; opacity:1;}
+
+  .nequi-box{
+    background:#fff;
+    border:1.5px dashed var(--accent);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:12px;
+    display:none;
+  }
+  .nequi-box.show{display:block;}
+  .nequi-box .nq-number{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:1.2rem;
+    color:var(--accent);
+    margin:4px 0 8px;
+  }
+  .nequi-box p{font-size:.78rem; opacity:.75;}
+  .proof-upload-btn{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    background:#fff; border:1.5px solid var(--line); border-radius:10px;
+    padding:10px; font-size:.85rem; font-weight:700; color:var(--text);
+    cursor:pointer; margin-top:8px;
+  }
+  .proof-preview{
+    display:flex; align-items:center; gap:8px; margin-top:8px;
+    font-size:.8rem; background:var(--bg); border-radius:8px; padding:6px 10px;
+  }
+  .proof-preview img{width:36px; height:36px; border-radius:6px; object-fit:cover;}
 
   /* ---------- Footer ---------- */
   footer{
@@ -430,6 +495,7 @@
     <h1 id="biz-name">Rincón de las Moñas</h1>
     <p class="tagline" id="biz-tagline">Hecho a mano con amor</p>
     <div class="deco-line"></div>
+    <button class="custom-order-btn" id="open-custom-order-btn">✨ Hacer un encargo especial</button>
   </div>
 </div>
 
@@ -485,6 +551,7 @@ let CONFIG = {
   color_accent: '#C97B93',
   color_text: '#4A3B3F',
   whatsapp_number: '3008853826',
+  nequi_number: '3008853826',
   facebook_url: '',
   city: 'Barranquilla',
   is_open: true,
@@ -628,7 +695,6 @@ function renderSpotlight(){
   const spotlightOrderBtn = document.getElementById('spotlight-order-btn');
   if(spotlightOrderBtn) spotlightOrderBtn.onclick = () => openOrderModal(p);
 
-  // Llevar a esa categoría y hacer scroll suave hacia el destacado
   if(p.category_id) activeCategory = p.category_id;
   setTimeout(() => wrap.scrollIntoView({ behavior:'smooth', block:'start' }), 150);
 }
@@ -770,7 +836,85 @@ function loadDemo(){
   refreshCatalogView();
 }
 
-// ---------------- Formulario de pedido ----------------
+// ---------------- Helpers compartidos: dirección/domicilio/pago adelantado ----------------
+
+function deliveryAndPaymentFieldsHTML(){
+  return `
+    <div class="field">
+      <label>¿Cómo prefieres recibirlo?</label>
+      <select id="om-delivery">
+        <option value="recoge">Yo lo recojo</option>
+        <option value="domicilio">Necesito que me lo lleven</option>
+      </select>
+    </div>
+    <div class="delivery-note" id="om-delivery-note">
+      🚚 El envío se confirma por WhatsApp según tu zona: si quedas muy cerca es gratis, si es más lejos puede tener un costo adicional.
+    </div>
+    <div class="field">
+      <label>Dirección</label>
+      <input type="text" id="om-address" placeholder="Barrio, calle, referencia...">
+    </div>
+    <div class="checkbox-field">
+      <input type="checkbox" id="om-advance">
+      <label for="om-advance">Pagaré por adelantado</label>
+    </div>
+    <div class="nequi-box" id="om-nequi-box">
+      <div style="font-size:.8rem; font-weight:700;">Nequi</div>
+      <div class="nq-number" id="om-nequi-number"></div>
+      <p>Haz la transferencia y sube aquí una foto del comprobante.</p>
+      <button type="button" class="proof-upload-btn" id="om-proof-btn">📎 Subir comprobante</button>
+      <input type="file" id="om-proof-input" accept="image/*" style="display:none">
+      <div id="om-proof-preview"></div>
+    </div>
+  `;
+}
+
+function wireDeliveryAndPaymentFields(){
+  const deliverySel = document.getElementById('om-delivery');
+  const note = document.getElementById('om-delivery-note');
+  deliverySel.onchange = () => {
+    note.classList.toggle('show', deliverySel.value === 'domicilio');
+  };
+
+  const advanceChk = document.getElementById('om-advance');
+  const nequiBox = document.getElementById('om-nequi-box');
+  document.getElementById('om-nequi-number').textContent = CONFIG.nequi_number || '—';
+  advanceChk.onchange = () => {
+    nequiBox.classList.toggle('show', advanceChk.checked);
+  };
+
+  const proofBtn = document.getElementById('om-proof-btn');
+  const proofInput = document.getElementById('om-proof-input');
+  proofBtn.onclick = () => proofInput.click();
+  proofInput.onchange = () => {
+    const file = proofInput.files[0];
+    const preview = document.getElementById('om-proof-preview');
+    if(!file){ preview.innerHTML = ''; return; }
+    const localUrl = URL.createObjectURL(file);
+    preview.innerHTML = `<div class="proof-preview"><img src="${localUrl}"><span>${escapeHtml(file.name)}</span></div>`;
+  };
+}
+
+function getDeliveryAndPaymentValues(){
+  return {
+    delivery_method: document.getElementById('om-delivery').value,
+    address: document.getElementById('om-address').value.trim(),
+    advance_payment: document.getElementById('om-advance').checked,
+    proofFile: document.getElementById('om-proof-input').files[0] || null
+  };
+}
+
+async function uploadProofIfAny(proofFile){
+  if(!proofFile || !sb) return null;
+  const ext = proofFile.name.split('.').pop();
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await sb.storage.from('payment-proofs').upload(path, proofFile);
+  if(error){ console.error('Error subiendo comprobante:', error); return null; }
+  const { data } = sb.storage.from('payment-proofs').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// ---------------- Formulario de pedido (producto del catálogo) ----------------
 function openOrderModal(p){
   const overlay = document.getElementById('order-modal-overlay');
   const content = document.getElementById('order-modal-content');
@@ -785,6 +929,7 @@ function openOrderModal(p){
       <label>Cantidad</label>
       <input type="number" id="om-qty" value="1" min="1">
     </div>
+    ${deliveryAndPaymentFieldsHTML()}
     <div class="field">
       <label>Nota (opcional)</label>
       <textarea id="om-note" placeholder="Ej: color, talla, para cuándo lo necesitas..."></textarea>
@@ -795,6 +940,7 @@ function openOrderModal(p){
     </div>
   `;
   overlay.classList.add('open');
+  wireDeliveryAndPaymentFields();
 
   document.getElementById('om-cancel').onclick = () => overlay.classList.remove('open');
 
@@ -802,15 +948,19 @@ function openOrderModal(p){
     const name = document.getElementById('om-name').value.trim();
     const qty = Number(document.getElementById('om-qty').value) || 1;
     const note = document.getElementById('om-note').value.trim();
+    const { delivery_method, address, advance_payment, proofFile } = getDeliveryAndPaymentValues();
 
-    if(!name){
-      alert('Por favor escribe tu nombre.');
-      return;
-    }
+    if(!name){ alert('Por favor escribe tu nombre.'); return; }
+    if(!address){ alert('Por favor escribe tu dirección.'); return; }
 
     const sendBtn = document.getElementById('om-send');
     sendBtn.disabled = true;
     sendBtn.textContent = 'Enviando…';
+
+    let payment_proof_url = null;
+    if(advance_payment && proofFile){
+      payment_proof_url = await uploadProofIfAny(proofFile);
+    }
 
     if(sb){
       try{
@@ -820,14 +970,17 @@ function openOrderModal(p){
           product_price: p.price,
           customer_name: name,
           quantity: qty,
-          note: note
+          note: note,
+          address: address,
+          delivery_method: delivery_method,
+          advance_payment: advance_payment,
+          payment_proof_url: payment_proof_url
         });
       }catch(e){
         console.error('Error guardando pedido:', e);
       }
     }
 
-    // Mensaje de confirmación + enlace a WhatsApp para cerrar el pedido
     content.innerHTML = `
       <div class="order-confirm">
         <div class="big-check">🌸</div>
@@ -836,7 +989,7 @@ function openOrderModal(p){
         <div class="om-actions" style="margin-top:18px;">
           <button class="om-btn om-cancel" id="om-close">Cerrar</button>
           <a class="om-btn om-send" style="text-decoration:none; display:flex; align-items:center; justify-content:center;"
-             href="${waLink(CONFIG.whatsapp_number, `Hola 🌸 Acabo de hacer un pedido de "${p.name}" (x${qty}) a nombre de ${name}. ${note ? 'Nota: ' + note : ''}`)}"
+             href="${waLink(CONFIG.whatsapp_number, `Hola 🌸 Acabo de hacer un pedido de "${p.name}" (x${qty}) a nombre de ${name}. Dirección: ${address} (${delivery_method === 'domicilio' ? 'domicilio' : 'lo recojo yo'}). ${advance_payment ? 'Ya hice el pago adelantado.' : ''} ${note ? 'Nota: ' + note : ''}`)}"
              target="_blank">Ir a WhatsApp</a>
         </div>
       </div>
@@ -844,6 +997,106 @@ function openOrderModal(p){
     document.getElementById('om-close').onclick = () => overlay.classList.remove('open');
   };
 }
+
+// ---------------- Formulario de encargo especial (independiente del catálogo) ----------------
+function openCustomOrderModal(){
+  const overlay = document.getElementById('order-modal-overlay');
+  const content = document.getElementById('order-modal-content');
+  content.innerHTML = `
+    <h3>Hacer un encargo especial</h3>
+    <div class="om-product">Cuéntanos qué tienes en mente y coordinamos los detalles.</div>
+    <div class="field">
+      <label>Tu nombre</label>
+      <input type="text" id="om-name" placeholder="¿Cómo te llamas?">
+    </div>
+    <div class="field">
+      <label>¿Qué quieres encargar?</label>
+      <textarea id="om-desc" placeholder="Describe el encargo: tipo de moña, colores, cantidad, etc."></textarea>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Lo necesito desde</label>
+        <input type="date" id="om-date-from">
+      </div>
+      <div class="field">
+        <label>hasta</label>
+        <input type="date" id="om-date-to">
+      </div>
+    </div>
+    ${deliveryAndPaymentFieldsHTML()}
+    <div class="field">
+      <label>Nota (opcional)</label>
+      <textarea id="om-note" placeholder="Algo más que debamos saber..."></textarea>
+    </div>
+    <div class="om-actions">
+      <button class="om-btn om-cancel" id="om-cancel">Cancelar</button>
+      <button class="om-btn om-send" id="om-send">Enviar encargo</button>
+    </div>
+  `;
+  overlay.classList.add('open');
+  wireDeliveryAndPaymentFields();
+
+  document.getElementById('om-cancel').onclick = () => overlay.classList.remove('open');
+
+  document.getElementById('om-send').onclick = async () => {
+    const name = document.getElementById('om-name').value.trim();
+    const description = document.getElementById('om-desc').value.trim();
+    const dateFrom = document.getElementById('om-date-from').value;
+    const dateTo = document.getElementById('om-date-to').value;
+    const note = document.getElementById('om-note').value.trim();
+    const { delivery_method, address, advance_payment, proofFile } = getDeliveryAndPaymentValues();
+
+    if(!name){ alert('Por favor escribe tu nombre.'); return; }
+    if(!description){ alert('Cuéntanos qué quieres encargar.'); return; }
+    if(!address){ alert('Por favor escribe tu dirección.'); return; }
+    if(!dateFrom || !dateTo){ alert('Indica el rango de fechas en que lo necesitas.'); return; }
+    if(dateTo < dateFrom){ alert('La fecha "hasta" no puede ser anterior a "desde".'); return; }
+
+    const sendBtn = document.getElementById('om-send');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Enviando…';
+
+    let payment_proof_url = null;
+    if(advance_payment && proofFile){
+      payment_proof_url = await uploadProofIfAny(proofFile);
+    }
+
+    if(sb){
+      try{
+        await sb.from('custom_orders').insert({
+          customer_name: name,
+          description: description,
+          date_from: dateFrom,
+          date_to: dateTo,
+          note: note,
+          address: address,
+          delivery_method: delivery_method,
+          advance_payment: advance_payment,
+          payment_proof_url: payment_proof_url
+        });
+      }catch(e){
+        console.error('Error guardando encargo:', e);
+      }
+    }
+
+    content.innerHTML = `
+      <div class="order-confirm">
+        <div class="big-check">✨</div>
+        <h3>¡Encargo recibido!</h3>
+        <p style="font-size:.9rem; opacity:.75; margin-top:6px;">Ahora escríbenos por WhatsApp para confirmar los detalles.</p>
+        <div class="om-actions" style="margin-top:18px;">
+          <button class="om-btn om-cancel" id="om-close">Cerrar</button>
+          <a class="om-btn om-send" style="text-decoration:none; display:flex; align-items:center; justify-content:center;"
+             href="${waLink(CONFIG.whatsapp_number, `Hola 🌸 Quiero hacer un encargo especial: "${description}". Lo necesito entre ${dateFrom} y ${dateTo}. Dirección: ${address} (${delivery_method === 'domicilio' ? 'domicilio' : 'lo recojo yo'}). A nombre de ${name}. ${advance_payment ? 'Ya hice el pago adelantado.' : ''} ${note ? 'Nota: ' + note : ''}`)}"
+             target="_blank">Ir a WhatsApp</a>
+        </div>
+      </div>
+    `;
+    document.getElementById('om-close').onclick = () => overlay.classList.remove('open');
+  };
+}
+
+document.getElementById('open-custom-order-btn').onclick = () => openCustomOrderModal();
 
 document.getElementById('order-modal-overlay').onclick = (e) => {
   if(e.target.id === 'order-modal-overlay') e.target.classList.remove('open');
