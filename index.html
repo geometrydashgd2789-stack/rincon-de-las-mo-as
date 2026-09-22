@@ -227,6 +227,63 @@
     font-style:italic;
   }
 
+  /* ---------- Producto destacado (enlace directo) ---------- */
+  .spotlight-wrap{
+    max-width:1000px;
+    margin:0 auto 34px;
+    padding:0 20px;
+  }
+  .spotlight-label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--accent);
+    font-weight:800;
+    font-size:.85rem;
+    margin-bottom:12px;
+    letter-spacing:.02em;
+  }
+  .spotlight-card{
+    background:var(--card);
+    border-radius:20px;
+    border:2px solid var(--accent);
+    box-shadow:0 8px 28px rgba(201,123,147,.22);
+    overflow:hidden;
+    display:grid;
+    grid-template-columns:1fr;
+    animation:spotlight-in .5s ease;
+  }
+  @media(min-width:560px){
+    .spotlight-card{grid-template-columns:220px 1fr;}
+  }
+  @keyframes spotlight-in{
+    from{opacity:0; transform:translateY(-8px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .spotlight-photo{
+    aspect-ratio:1/1;
+    background:#fff;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .spotlight-photo img{width:100%; height:100%; object-fit:cover;}
+  .spotlight-photo .no-photo{font-size:3rem; color:var(--line);}
+  .spotlight-body{
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .spotlight-body h3{font-size:1.25rem; font-weight:600;}
+  .spotlight-body p.desc{font-size:.9rem; opacity:.75; flex:0;}
+  .spotlight-body .price{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:1.4rem;
+    color:var(--accent);
+  }
+  .spotlight-body .wa-btn{max-width:260px; margin-top:10px;}
+
   /* ---------- Footer ---------- */
   footer{
     max-width:1000px;
@@ -296,6 +353,11 @@
 </div>
 
 <nav class="cat-nav" id="cat-nav"></nav>
+
+<div class="spotlight-wrap" id="spotlight-wrap" style="display:none;">
+  <div class="spotlight-label">✨ Te comparten esto</div>
+  <div class="spotlight-card" id="spotlight-card"></div>
+</div>
 
 <main class="catalog" id="catalog">
   <div class="loading">Cargando catálogo…</div>
@@ -420,6 +482,50 @@ let ALL_PRODUCTS = [];
 function refreshCatalogView(){
   renderNav(ALL_CATEGORIES);
   renderCatalog(ALL_CATEGORIES, ALL_PRODUCTS);
+  renderSpotlight();
+}
+
+function getSpotlightId(){
+  const params = new URLSearchParams(window.location.search);
+  return params.get('producto');
+}
+
+function renderSpotlight(){
+  const wrap = document.getElementById('spotlight-wrap');
+  const spotlightId = getSpotlightId();
+  if(!spotlightId){
+    wrap.style.display = 'none';
+    return;
+  }
+  const p = ALL_PRODUCTS.find(prod => prod.id === spotlightId);
+  if(!p){
+    wrap.style.display = 'none';
+    return;
+  }
+
+  const card = document.getElementById('spotlight-card');
+  const photoUrl = (p.photos && p.photos[0]) ? p.photos[0] : null;
+
+  card.innerHTML = `
+    <div class="spotlight-photo">
+      ${photoUrl ? `<img src="${photoUrl}" alt="${escapeHtml(p.name)}">` : '<span class="no-photo">🌸</span>'}
+    </div>
+    <div class="spotlight-body">
+      <h3>${escapeHtml(p.name)}</h3>
+      ${p.description ? `<p class="desc">${escapeHtml(p.description)}</p>` : ''}
+      <div class="price">${money(p.price)}</div>
+      <a class="wa-btn${p.in_stock ? '' : ' disabled'}" href="${p.in_stock ? productWaLink(p) : '#'}" target="_blank">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.48 1.32 4.99L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.06c-1.5 0-2.97-.4-4.25-1.16l-.3-.18-3.15.83.84-3.07-.2-.32a8.06 8.06 0 0 1-1.24-4.25c0-4.46 3.63-8.09 8.1-8.09 2.16 0 4.2.85 5.72 2.37a8.03 8.03 0 0 1 2.37 5.72c0 4.47-3.63 8.15-8.09 8.15z"/></svg>
+        ${p.in_stock ? 'Pedir por WhatsApp' : 'Agotado por ahora'}
+      </a>
+    </div>
+  `;
+
+  wrap.style.display = 'block';
+
+  // Llevar a esa categoría y hacer scroll suave hacia el destacado
+  if(p.category_id) activeCategory = p.category_id;
+  setTimeout(() => wrap.scrollIntoView({ behavior:'smooth', block:'start' }), 150);
 }
 
 function renderCatalog(categories, products){
