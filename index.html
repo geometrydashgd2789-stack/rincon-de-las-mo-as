@@ -309,13 +309,15 @@
     background:#FFF3E0;
     color:#8A5A00;
     border-radius:14px;
-    padding:14px 18px;
-    font-size:.88rem;
-    font-weight:600;
+    padding:16px 18px;
+    font-size:.9rem;
+    font-weight:700;
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:12px;
+    border:1.5px solid #F0D9A8;
   }
+  .closed-banner-inner .cb-icon{font-size:1.4rem; flex:none;}
 
   /* ---------- Formulario de pedido / encargo ---------- */
   .order-btn{
@@ -503,7 +505,7 @@
 
 <div class="closed-banner" id="closed-banner" style="display:none;">
   <div class="closed-banner-inner">
-    🌙 <span id="closed-message"></span>
+    <span class="cb-icon">🧵</span> <span id="closed-message"></span>
   </div>
 </div>
 
@@ -608,11 +610,18 @@ function applyConfig(cfg){
   }
 
   const banner = document.getElementById('closed-banner');
+  const customOrderBtn = document.getElementById('open-custom-order-btn');
   if(!CONFIG.is_open){
     document.getElementById('closed-message').textContent = CONFIG.closed_message;
     banner.style.display = 'block';
+    customOrderBtn.disabled = true;
+    customOrderBtn.style.opacity = '.5';
+    customOrderBtn.style.pointerEvents = 'none';
   } else {
     banner.style.display = 'none';
+    customOrderBtn.disabled = false;
+    customOrderBtn.style.opacity = '1';
+    customOrderBtn.style.pointerEvents = 'auto';
   }
 }
 
@@ -674,6 +683,7 @@ function renderSpotlight(){
 
   const card = document.getElementById('spotlight-card');
   const photoUrl = (p.photos && p.photos[0]) ? p.photos[0] : null;
+  const canOrder = p.in_stock && CONFIG.is_open;
 
   card.innerHTML = `
     <div class="spotlight-photo">
@@ -683,11 +693,11 @@ function renderSpotlight(){
       <h3>${escapeHtml(p.name)}</h3>
       ${p.description ? `<p class="desc">${escapeHtml(p.description)}</p>` : ''}
       <div class="price">${money(p.price)}</div>
-      <a class="wa-btn${p.in_stock ? '' : ' disabled'}" href="${p.in_stock ? productWaLink(p) : '#'}" target="_blank">
+      <a class="wa-btn${canOrder ? '' : ' disabled'}" href="${canOrder ? productWaLink(p) : '#'}" target="_blank">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.48 1.32 4.99L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.06c-1.5 0-2.97-.4-4.25-1.16l-.3-.18-3.15.83.84-3.07-.2-.32a8.06 8.06 0 0 1-1.24-4.25c0-4.46 3.63-8.09 8.1-8.09 2.16 0 4.2.85 5.72 2.37a8.03 8.03 0 0 1 2.37 5.72c0 4.47-3.63 8.15-8.09 8.15z"/></svg>
-        ${p.in_stock ? 'Pedir por WhatsApp' : 'Agotado por ahora'}
+        ${p.in_stock ? (CONFIG.is_open ? 'Pedir por WhatsApp' : 'Tienda cerrada') : 'Agotado por ahora'}
       </a>
-      ${p.in_stock ? `<button class="order-btn" id="spotlight-order-btn" style="max-width:260px;">Hacer pedido</button>` : ''}
+      ${canOrder ? `<button class="order-btn" id="spotlight-order-btn" style="max-width:260px;">Hacer pedido</button>` : ''}
     </div>
   `;
 
@@ -770,17 +780,18 @@ function renderCard(p){
   `;
 
   const btn = document.createElement('a');
-  btn.className = 'wa-btn' + (p.in_stock ? '' : ' disabled');
-  btn.href = p.in_stock ? productWaLink(p) : '#';
+  const canOrder = p.in_stock && CONFIG.is_open;
+  btn.className = 'wa-btn' + (canOrder ? '' : ' disabled');
+  btn.href = canOrder ? productWaLink(p) : '#';
   btn.target = '_blank';
   btn.innerHTML = `
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.48 1.32 4.99L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.06c-1.5 0-2.97-.4-4.25-1.16l-.3-.18-3.15.83.84-3.07-.2-.32a8.06 8.06 0 0 1-1.24-4.25c0-4.46 3.63-8.09 8.1-8.09 2.16 0 4.2.85 5.72 2.37a8.03 8.03 0 0 1 2.37 5.72c0 4.47-3.63 8.15-8.09 8.15z"/></svg>
-    ${p.in_stock ? 'Pedir por WhatsApp' : 'Agotado por ahora'}
+    ${p.in_stock ? (CONFIG.is_open ? 'Pedir por WhatsApp' : 'Tienda cerrada') : 'Agotado por ahora'}
   `;
 
   body.appendChild(btn);
 
-  if(p.in_stock){
+  if(canOrder){
     const orderBtn = document.createElement('button');
     orderBtn.className = 'order-btn';
     orderBtn.textContent = 'Hacer pedido';
@@ -950,6 +961,10 @@ function openOrderModal(p){
   document.getElementById('om-cancel').onclick = () => overlay.classList.remove('open');
 
   document.getElementById('om-send').onclick = async () => {
+    if(!CONFIG.is_open){
+      alert('Lo sentimos, no estamos recibiendo pedidos en este momento.');
+      return;
+    }
     const name = document.getElementById('om-name').value.trim();
     const qty = Number(document.getElementById('om-qty').value) || 1;
     const note = document.getElementById('om-note').value.trim();
@@ -1044,6 +1059,10 @@ function openCustomOrderModal(){
   document.getElementById('om-cancel').onclick = () => overlay.classList.remove('open');
 
   document.getElementById('om-send').onclick = async () => {
+    if(!CONFIG.is_open){
+      alert('Lo sentimos, no estamos recibiendo encargos en este momento.');
+      return;
+    }
     const name = document.getElementById('om-name').value.trim();
     const description = document.getElementById('om-desc').value.trim();
     const dateFrom = document.getElementById('om-date-from').value;
@@ -1101,7 +1120,13 @@ function openCustomOrderModal(){
   };
 }
 
-document.getElementById('open-custom-order-btn').onclick = () => openCustomOrderModal();
+document.getElementById('open-custom-order-btn').onclick = () => {
+  if(!CONFIG.is_open){
+    alert('Lo sentimos, no estamos recibiendo encargos en este momento.');
+    return;
+  }
+  openCustomOrderModal();
+};
 
 document.getElementById('order-modal-overlay').onclick = (e) => {
   if(e.target.id === 'order-modal-overlay') e.target.classList.remove('open');
