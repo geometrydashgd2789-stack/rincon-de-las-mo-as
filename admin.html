@@ -232,12 +232,19 @@
     background:var(--card); border:1.5px solid var(--line); border-radius:999px;
     padding:6px 13px; font-size:.78rem; font-weight:700; color:var(--text);
     display:flex; align-items:center; gap:5px;
+    cursor:pointer; user-select:none;
+    transition:transform .1s;
   }
+  .summary-chip:active{transform:scale(.96);}
   .summary-chip .n{font-family:'Fraunces',serif; font-size:.9rem;}
   .summary-chip.total{background:var(--text); color:#fff; border-color:var(--text);}
   .summary-chip.nuevo{border-color:#C97B93; color:#C97B93;}
   .summary-chip.entregado{border-color:var(--ok); color:var(--ok);}
   .summary-chip.cancelado{border-color:var(--danger); color:var(--danger);}
+  .summary-chip.active{
+    box-shadow:0 0 0 2px var(--accent) inset;
+    background:var(--accent); color:#fff; border-color:var(--accent);
+  }
 
   /* ---- Pedidos / Encargos ---- */
   .order-card{
@@ -345,15 +352,6 @@
     <section class="panel" id="panel-orders">
       <div class="section-head">
         <h2>Pedidos</h2>
-        <select id="orders-filter" style="padding:8px 12px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:.85rem;">
-          <option value="all">Todos</option>
-          <option value="nuevo" selected>Nuevos</option>
-          <option value="confirmado">Confirmados</option>
-          <option value="en_preparacion">En preparación</option>
-          <option value="en_camino">En camino</option>
-          <option value="entregado">Entregados</option>
-          <option value="cancelado">Cancelados</option>
-        </select>
       </div>
       <div class="summary-bar" id="orders-summary"></div>
       <div id="order-list"></div>
@@ -363,15 +361,6 @@
     <section class="panel" id="panel-custom-orders">
       <div class="section-head">
         <h2>Encargos</h2>
-        <select id="custom-orders-filter" style="padding:8px 12px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:.85rem;">
-          <option value="all">Todos</option>
-          <option value="nuevo" selected>Nuevos</option>
-          <option value="confirmado">Confirmados</option>
-          <option value="en_preparacion">En preparación</option>
-          <option value="en_camino">En camino</option>
-          <option value="entregado">Entregados</option>
-          <option value="cancelado">Cancelados</option>
-        </select>
       </div>
       <div class="summary-bar" id="custom-orders-summary"></div>
       <div id="custom-order-list"></div>
@@ -968,7 +957,18 @@ function orderDetailRowsHTML(o){
   return rows.join('');
 }
 
-function renderStatusSummary(containerId, items){
+// Filtro recordado por navegador (localStorage). Default: 'all' (Todos).
+function getStoredFilter(key){
+  try{ return localStorage.getItem(key) || 'all'; }catch(e){ return 'all'; }
+}
+function setStoredFilter(key, value){
+  try{ localStorage.setItem(key, value); }catch(e){ /* si el navegador bloquea storage, seguimos sin recordar */ }
+}
+
+let activeOrdersFilter = getStoredFilter('monas_admin_orders_filter');
+let activeCustomOrdersFilter = getStoredFilter('monas_admin_custom_orders_filter');
+
+function renderStatusSummary(containerId, items, activeValue, onSelect){
   const container = document.getElementById(containerId);
   if(!container) return;
 
@@ -977,22 +977,28 @@ function renderStatusSummary(containerId, items){
   items.forEach(o => { if(counts[o.status] !== undefined) counts[o.status]++; });
 
   const chips = [
-    `<span class="summary-chip total">Total <span class="n">${items.length}</span></span>`
+    `<span class="summary-chip total${activeValue === 'all' ? ' active' : ''}" data-value="all">Total <span class="n">${items.length}</span></span>`
   ];
   Object.entries(STATUS_LABELS).forEach(([key, label]) => {
     if(counts[key] === 0) return;
-    chips.push(`<span class="summary-chip ${key}">${label} <span class="n">${counts[key]}</span></span>`);
+    chips.push(`<span class="summary-chip ${key}${activeValue === key ? ' active' : ''}" data-value="${key}">${label} <span class="n">${counts[key]}</span></span>`);
   });
 
   container.innerHTML = chips.join('');
+  container.querySelectorAll('.summary-chip').forEach(chip => {
+    chip.onclick = () => onSelect(chip.dataset.value);
+  });
 }
 
 function renderOrders(){
-  renderStatusSummary('orders-summary', ORDERS);
+  renderStatusSummary('orders-summary', ORDERS, activeOrdersFilter, (value) => {
+    activeOrdersFilter = value;
+    setStoredFilter('monas_admin_orders_filter', value);
+    renderOrders();
+  });
 
-  const filter = document.getElementById('orders-filter').value;
   const list = document.getElementById('order-list');
-  const filtered = filter === 'all' ? ORDERS : ORDERS.filter(o => o.status === filter);
+  const filtered = activeOrdersFilter === 'all' ? ORDERS : ORDERS.filter(o => o.status === activeOrdersFilter);
 
   if(filtered.length === 0){
     list.innerHTML = '<div class="empty-hint">No hay pedidos en esta categoría 🌸</div>';
@@ -1030,8 +1036,6 @@ function renderOrders(){
   });
 }
 
-document.getElementById('orders-filter').onchange = renderOrders;
-
 // ---------------- ENCARGOS ----------------
 let CUSTOM_ORDERS = [];
 
@@ -1062,11 +1066,14 @@ function formatDateRange(from, to){
 }
 
 function renderCustomOrders(){
-  renderStatusSummary('custom-orders-summary', CUSTOM_ORDERS);
+  renderStatusSummary('custom-orders-summary', CUSTOM_ORDERS, activeCustomOrdersFilter, (value) => {
+    activeCustomOrdersFilter = value;
+    setStoredFilter('monas_admin_custom_orders_filter', value);
+    renderCustomOrders();
+  });
 
-  const filter = document.getElementById('custom-orders-filter').value;
   const list = document.getElementById('custom-order-list');
-  const filtered = filter === 'all' ? CUSTOM_ORDERS : CUSTOM_ORDERS.filter(o => o.status === filter);
+  const filtered = activeCustomOrdersFilter === 'all' ? CUSTOM_ORDERS : CUSTOM_ORDERS.filter(o => o.status === activeCustomOrdersFilter);
 
   if(filtered.length === 0){
     list.innerHTML = '<div class="empty-hint">No hay encargos en esta categoría ✨</div>';
@@ -1104,8 +1111,6 @@ function renderCustomOrders(){
     };
   });
 }
-
-document.getElementById('custom-orders-filter').onchange = renderCustomOrders;
 
 // ---------------- THEME ----------------
 async function loadTheme(){
