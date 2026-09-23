@@ -223,6 +223,22 @@
 
   .empty-hint{text-align:center; padding:40px 20px; opacity:.55; font-style:italic; font-family:'Fraunces',serif;}
 
+  /* ---- Resumen de estados ---- */
+  .summary-bar{
+    display:flex; flex-wrap:wrap; gap:8px;
+    margin-bottom:14px;
+  }
+  .summary-chip{
+    background:var(--card); border:1.5px solid var(--line); border-radius:999px;
+    padding:6px 13px; font-size:.78rem; font-weight:700; color:var(--text);
+    display:flex; align-items:center; gap:5px;
+  }
+  .summary-chip .n{font-family:'Fraunces',serif; font-size:.9rem;}
+  .summary-chip.total{background:var(--text); color:#fff; border-color:var(--text);}
+  .summary-chip.nuevo{border-color:#C97B93; color:#C97B93;}
+  .summary-chip.entregado{border-color:var(--ok); color:var(--ok);}
+  .summary-chip.cancelado{border-color:var(--danger); color:var(--danger);}
+
   /* ---- Pedidos / Encargos ---- */
   .order-card{
     background:var(--card); border:1px solid var(--line); border-radius:16px;
@@ -339,6 +355,7 @@
           <option value="cancelado">Cancelados</option>
         </select>
       </div>
+      <div class="summary-bar" id="orders-summary"></div>
       <div id="order-list"></div>
     </section>
 
@@ -356,6 +373,7 @@
           <option value="cancelado">Cancelados</option>
         </select>
       </div>
+      <div class="summary-bar" id="custom-orders-summary"></div>
       <div id="custom-order-list"></div>
     </section>
 
@@ -552,6 +570,22 @@ function statusOptionsHTML(current){
   return Object.entries(STATUS_LABELS).map(([value, label]) =>
     `<option value="${value}" ${current === value ? 'selected' : ''}>${label}</option>`
   ).join('');
+}
+
+function renderSummaryBar(containerId, items){
+  const el = document.getElementById(containerId);
+  const total = items.length;
+  const counts = {};
+  Object.keys(STATUS_LABELS).forEach(k => counts[k] = 0);
+  items.forEach(i => { if(counts[i.status] !== undefined) counts[i.status]++; });
+
+  const chips = [`<span class="summary-chip total">Total <span class="n">${total}</span></span>`];
+  Object.entries(STATUS_LABELS).forEach(([key, label]) => {
+    if(counts[key] > 0){
+      chips.push(`<span class="summary-chip ${key}">${label} <span class="n">${counts[key]}</span></span>`);
+    }
+  });
+  el.innerHTML = chips.join('');
 }
 
 // ---------------- AUTH ----------------
@@ -934,7 +968,28 @@ function orderDetailRowsHTML(o){
   return rows.join('');
 }
 
+function renderStatusSummary(containerId, items){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+
+  const counts = {};
+  Object.keys(STATUS_LABELS).forEach(k => counts[k] = 0);
+  items.forEach(o => { if(counts[o.status] !== undefined) counts[o.status]++; });
+
+  const chips = [
+    `<span class="summary-chip total">Total <span class="n">${items.length}</span></span>`
+  ];
+  Object.entries(STATUS_LABELS).forEach(([key, label]) => {
+    if(counts[key] === 0) return;
+    chips.push(`<span class="summary-chip ${key}">${label} <span class="n">${counts[key]}</span></span>`);
+  });
+
+  container.innerHTML = chips.join('');
+}
+
 function renderOrders(){
+  renderStatusSummary('orders-summary', ORDERS);
+
   const filter = document.getElementById('orders-filter').value;
   const list = document.getElementById('order-list');
   const filtered = filter === 'all' ? ORDERS : ORDERS.filter(o => o.status === filter);
@@ -1007,6 +1062,8 @@ function formatDateRange(from, to){
 }
 
 function renderCustomOrders(){
+  renderStatusSummary('custom-orders-summary', CUSTOM_ORDERS);
+
   const filter = document.getElementById('custom-orders-filter').value;
   const list = document.getElementById('custom-order-list');
   const filtered = filter === 'all' ? CUSTOM_ORDERS : CUSTOM_ORDERS.filter(o => o.status === filter);
