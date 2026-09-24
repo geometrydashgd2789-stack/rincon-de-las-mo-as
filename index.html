@@ -137,9 +137,14 @@
     padding-left:2px;
   }
   .grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
     gap:16px;
+  }
+  .grid .card{
+    flex:1 1 160px;
+    max-width:220px;
   }
   .card{
     background:var(--card);
