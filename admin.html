@@ -429,6 +429,15 @@
         Esto se muestra a los clientes cuando eligen pagar por adelantado, para que confirmen que la cuenta es correcta.
       </p>
 
+      <h3 class="section-sub">Aviso de pocas unidades</h3>
+      <div class="field">
+        <label>Mostrar "¡Solo quedan X!" cuando la cantidad sea igual o menor a</label>
+        <input type="number" id="theme-low-stock" min="0" step="1" placeholder="3">
+      </div>
+      <p style="font-size:.78rem; opacity:.6; margin-top:-6px; margin-bottom:6px;">
+        Con cantidades por encima de este número, la tienda no muestra ningún aviso de stock.
+      </p>
+
       <h3 class="section-sub">Colores</h3>
       <div class="swatch-field">
         <input type="color" id="theme-bg">
@@ -496,9 +505,10 @@
       <input type="checkbox" id="pf-combo">
       <label for="pf-combo">Es un combo / set</label>
     </div>
-    <div class="checkbox-row">
-      <input type="checkbox" id="pf-stock" checked>
-      <label for="pf-stock">Hay disponible (en stock)</label>
+    <div class="field">
+      <label>Cantidad disponible</label>
+      <input type="number" id="pf-stock-qty" min="0" step="1" value="1">
+      <p style="font-size:.75rem; opacity:.6; margin-top:4px;">Pon 0 si no queda ninguna (se mostrará como agotado).</p>
     </div>
 
     <div class="modal-actions">
@@ -763,7 +773,7 @@ function renderProductList(){
       <div class="info">
         <div class="name">${escapeHtml(p.name)}</div>
         <div class="meta">
-          ${cat ? escapeHtml(cat.name) : 'Sin categoría'} · $${Number(p.price).toLocaleString('es-CO')}
+          ${cat ? escapeHtml(cat.name) : 'Sin categoría'} · $${Number(p.price).toLocaleString('es-CO')} · ${(p.stock_quantity ?? 0)} disp.
           ${p.is_combo ? '<span class="tag combo">Combo</span>' : ''}
           ${!p.in_stock ? '<span class="tag out">Agotado</span>' : ''}
         </div>
@@ -822,7 +832,7 @@ function openProductModal(product){
   document.getElementById('pf-desc').value = product ? product.description : '';
   document.getElementById('pf-price').value = product ? product.price : '';
   document.getElementById('pf-combo').checked = product ? product.is_combo : false;
-  document.getElementById('pf-stock').checked = product ? product.in_stock : true;
+  document.getElementById('pf-stock-qty').value = product ? (product.stock_quantity ?? (product.in_stock ? 1 : 0)) : 1;
   if(product && product.category_id) document.getElementById('pf-category').value = product.category_id;
 
   CURRENT_PHOTOS = product ? product.photos.map(ph => ({ url: ph.photo_url, isNew:false })) : [];
@@ -868,13 +878,15 @@ document.getElementById('pf-save').onclick = async () => {
   const name = document.getElementById('pf-name').value.trim();
   if(!name){ alert('Ponle un nombre al producto.'); return; }
 
+  const stockQty = Math.max(0, Number(document.getElementById('pf-stock-qty').value) || 0);
   const payload = {
     name,
     description: document.getElementById('pf-desc').value.trim(),
     price: Number(document.getElementById('pf-price').value) || 0,
     category_id: document.getElementById('pf-category').value || null,
     is_combo: document.getElementById('pf-combo').checked,
-    in_stock: document.getElementById('pf-stock').checked
+    stock_quantity: stockQty,
+    in_stock: stockQty > 0
   };
 
   const saveBtn = document.getElementById('pf-save');
@@ -1123,6 +1135,7 @@ async function loadTheme(){
   document.getElementById('theme-city').value = data.city;
   document.getElementById('theme-nequi-number').value = data.nequi_number || '';
   document.getElementById('theme-nequi-holder').value = data.nequi_holder_name || '';
+  document.getElementById('theme-low-stock').value = data.low_stock_threshold ?? 3;
   document.getElementById('theme-bg').value = data.color_bg;
   document.getElementById('theme-primary').value = data.color_primary;
   document.getElementById('theme-accent').value = data.color_accent;
@@ -1173,6 +1186,7 @@ document.getElementById('save-theme-btn').onclick = async () => {
     city: document.getElementById('theme-city').value.trim(),
     nequi_number: document.getElementById('theme-nequi-number').value.trim(),
     nequi_holder_name: document.getElementById('theme-nequi-holder').value.trim(),
+    low_stock_threshold: Math.max(0, Number(document.getElementById('theme-low-stock').value) || 0),
     color_bg: document.getElementById('theme-bg').value,
     color_primary: document.getElementById('theme-primary').value,
     color_accent: document.getElementById('theme-accent').value,

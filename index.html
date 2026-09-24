@@ -184,6 +184,10 @@
     background:#eee;
     color:#999;
   }
+  .badge.low-stock{
+    background:#FFE8CC;
+    color:#B5680B;
+  }
   .card-body{
     padding:12px 14px 14px;
     display:flex;
@@ -280,6 +284,7 @@
     background:#fff;
     display:flex; align-items:center; justify-content:center;
     overflow:hidden;
+    position:relative;
   }
   .spotlight-photo img{width:100%; height:100%; object-fit:cover;}
   .spotlight-photo .no-photo{font-size:3rem; color:var(--line);}
@@ -555,6 +560,7 @@ let CONFIG = {
   whatsapp_number: '3008853826',
   nequi_number: '3008853826',
   nequi_holder_name: 'Norelis Johana Vizcaino Bustamante',
+  low_stock_threshold: 3,
   facebook_url: '',
   city: 'Barranquilla',
   is_open: true,
@@ -684,10 +690,12 @@ function renderSpotlight(){
   const card = document.getElementById('spotlight-card');
   const photoUrl = (p.photos && p.photos[0]) ? p.photos[0] : null;
   const canOrder = p.in_stock && CONFIG.is_open;
+  const isLowStock = p.in_stock && (p.stock_quantity ?? 1) > 0 && (p.stock_quantity ?? 1) <= (CONFIG.low_stock_threshold ?? 3);
 
   card.innerHTML = `
     <div class="spotlight-photo">
       ${photoUrl ? `<img src="${photoUrl}" alt="${escapeHtml(p.name)}">` : '<span class="no-photo">🌸</span>'}
+      ${isLowStock ? `<span class="badge low-stock" style="position:absolute;top:8px;left:8px;">¡Solo quedan ${p.stock_quantity}!</span>` : ''}
     </div>
     <div class="spotlight-body">
       <h3>${escapeHtml(p.name)}</h3>
@@ -759,6 +767,8 @@ function renderCard(p){
     photo.innerHTML = '<span class="no-photo">🌸</span>';
   }
 
+  const isLowStock = p.in_stock && (p.stock_quantity ?? 1) > 0 && (p.stock_quantity ?? 1) <= (CONFIG.low_stock_threshold ?? 3);
+
   if(p.is_combo){
     const b = document.createElement('span');
     b.className = 'badge';
@@ -768,6 +778,11 @@ function renderCard(p){
     const b = document.createElement('span');
     b.className = 'badge out';
     b.textContent = 'Agotado';
+    photo.appendChild(b);
+  } else if(isLowStock){
+    const b = document.createElement('span');
+    b.className = 'badge low-stock';
+    b.textContent = `¡Solo quedan ${p.stock_quantity}!`;
     photo.appendChild(b);
   }
 
