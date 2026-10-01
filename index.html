@@ -37,7 +37,7 @@
   .hero-deco{
     position:absolute;
     pointer-events:none;
-    color:var(--primary);
+    color:var(--season-color, var(--primary));
   }
   .hero-deco.deco-1{
     top:-80px; right:-60px;
@@ -146,7 +146,7 @@
     justify-content:center;
     gap:22px;
     margin-bottom:38px;
-    color:var(--primary);
+    color:var(--season-color, var(--primary));
     opacity:.8;
   }
   .season-divider svg{
@@ -681,7 +681,8 @@ let CONFIG = {
   city: 'Barranquilla',
   is_open: true,
   closed_message: 'Por ahora no estamos recibiendo pedidos nuevos. ¡Vuelve pronto!',
-  season_shape: 'circles'
+  season_shape: 'circles',
+  season_color: '#F0C4CE'
 };
 
 const DEMO_CATEGORIES = [
@@ -745,6 +746,7 @@ function applyConfig(cfg){
   root.setProperty('--primary', CONFIG.color_primary);
   root.setProperty('--accent', CONFIG.color_accent);
   root.setProperty('--text', CONFIG.color_text);
+  root.setProperty('--season-color', CONFIG.season_color || CONFIG.color_primary);
   renderHeroDecoration(CONFIG.season_shape || 'circles');
   document.title = CONFIG.business_name;
   document.getElementById('biz-name').textContent = CONFIG.business_name;
