@@ -413,7 +413,7 @@
 
       <h3 class="section-sub">Decoración de temporada</h3>
       <p style="font-size:.78rem; opacity:.6; margin-top:-6px; margin-bottom:12px;">
-        Cambia la forma de los detalles suaves del fondo (los que están detrás del título) según la época o festividad. Usan el mismo color primario que elegiste arriba.
+        Cambia la forma de los detalles suaves del fondo (los que están detrás del título) y de las líneas que separan categorías, según la época o festividad.
       </p>
       <div class="field">
         <label>Tema decorativo</label>
@@ -429,6 +429,13 @@
           <option value="fireworks">Año nuevo</option>
         </select>
       </div>
+      <div class="swatch-field">
+        <input type="color" id="theme-season-color">
+        <div class="swatch-label"><div class="name">Color de las figuras decorativas</div><input type="text" class="hex-input" id="hex-season-color" maxlength="7" placeholder="#F0C4CE" autocomplete="off" spellcheck="false" aria-label="Código de color de las figuras decorativas"></div>
+      </div>
+      <p style="font-size:.78rem; opacity:.6; margin-top:-8px; margin-bottom:12px;">
+        Independiente del color primario — así puedes elegir, por ejemplo, un dorado para las figuras de Navidad sin cambiar el color de las etiquetas.
+      </p>
       <div class="season-shape-preview" id="season-shape-preview"></div>
 
       <h3 class="section-sub">Aviso de pocas unidades</h3>
@@ -583,7 +590,8 @@ const COLOR_FIELDS = [
   { picker: 'theme-bg', hex: 'hex-bg' },
   { picker: 'theme-primary', hex: 'hex-primary' },
   { picker: 'theme-accent', hex: 'hex-accent' },
-  { picker: 'theme-text', hex: 'hex-text' }
+  { picker: 'theme-text', hex: 'hex-text' },
+  { picker: 'theme-season-color', hex: 'hex-season-color' }
 ];
 
 function toast(msg){
@@ -1187,16 +1195,16 @@ const SEASON_SHAPES = {
 
 function renderSeasonShapePreview(key){
   const shape = SEASON_SHAPES[key] || SEASON_SHAPES.circles;
-  const accent = document.getElementById('theme-primary').value || '#F0C4CE';
+  const seasonColor = document.getElementById('theme-season-color').value || '#F0C4CE';
   const wrap = document.getElementById('season-shape-preview');
   wrap.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="${seasonColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="${shape.path}"/>
     </svg>
-    <svg viewBox="0 0 24 24" fill="${accent}" opacity=".8">
+    <svg viewBox="0 0 24 24" fill="${seasonColor}" opacity=".8">
       <path d="${shape.path}"/>
     </svg>
-    <span style="font-size:.82rem; opacity:.7;">Así se verán los detalles de fondo con el tema "${shape.label}"</span>
+    <span style="font-size:.82rem; opacity:.7;">Así se verán las figuras del tema "${shape.label}"</span>
   `;
 }
 
@@ -1218,6 +1226,7 @@ async function loadTheme(){
   document.getElementById('theme-is-open').checked = data.is_open !== false;
   document.getElementById('theme-closed-message').value = data.closed_message || '';
   document.getElementById('theme-season-shape').value = data.season_shape || 'circles';
+  document.getElementById('theme-season-color').value = data.season_color || data.color_primary || '#F0C4CE';
   updateOpenToggleUI();
   updateThemePreview();
   renderSeasonShapePreview(document.getElementById('theme-season-shape').value);
@@ -1225,6 +1234,9 @@ async function loadTheme(){
 
 document.getElementById('theme-season-shape').addEventListener('change', (e) => {
   renderSeasonShapePreview(e.target.value);
+});
+document.getElementById('theme-season-color').addEventListener('input', () => {
+  renderSeasonShapePreview(document.getElementById('theme-season-shape').value);
 });
 
 function updateOpenToggleUI(){
@@ -1239,9 +1251,6 @@ document.getElementById('theme-is-open').addEventListener('change', updateOpenTo
 
 ['theme-bg','theme-primary','theme-accent','theme-text','theme-name','theme-tagline'].forEach(id => {
   document.getElementById(id).addEventListener('input', updateThemePreview);
-});
-document.getElementById('theme-primary').addEventListener('input', () => {
-  renderSeasonShapePreview(document.getElementById('theme-season-shape').value);
 });
 
 function normalizeHex(value){
@@ -1325,7 +1334,8 @@ document.getElementById('save-appearance-btn').onclick = async () => {
     color_primary: document.getElementById('theme-primary').value,
     color_accent: document.getElementById('theme-accent').value,
     color_text: document.getElementById('theme-text').value,
-    season_shape: document.getElementById('theme-season-shape').value
+    season_shape: document.getElementById('theme-season-shape').value,
+    season_color: document.getElementById('theme-season-color').value
   };
   await sb.from('site_config').update(payload).eq('id', 1);
   toast('Apariencia guardada — ya se ve reflejada en la tienda');
