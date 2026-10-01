@@ -1148,7 +1148,8 @@ function openOrderModal(p){
 
     if(sb){
       try{
-        await sb.from('orders').insert({
+          const { error } = await sb.from('orders').insert({ ... });
+if (error) { alert('No se pudo enviar el pedido. Revisa los datos.'); sendBtn.disabled = false; sendBtn.textContent = 'Enviar pedido'; return; };
           product_id: p.id,
           product_name: p.name,
           product_price: p.price,
