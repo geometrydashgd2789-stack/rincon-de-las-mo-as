@@ -305,28 +305,6 @@
   .switch input:checked + .slider{background:var(--ok);}
   .switch input:checked + .slider::before{transform:translateX(20px);}
 
-  /* ---- Editor de imagen para compartir ---- */
-  .sh-canvas{
-    width:100%; display:block; border-radius:12px;
-    border:1px solid var(--line); background:#fff; margin-bottom:6px;
-  }
-  .sh-hint{font-size:.78rem; opacity:.65; margin-bottom:14px;}
-  .photo-thumb.pick{cursor:pointer;}
-  .photo-thumb.pick.selected{outline:3px solid var(--accent); outline-offset:1px;}
-  .sh-range{width:100%; accent-color:var(--accent);}
-  .sh-status{
-    font-size:.8rem; font-weight:700; border-radius:10px;
-    padding:9px 12px; margin-bottom:14px; background:#fff; border:1px solid var(--line);
-  }
-  .sh-status.ok{color:var(--ok); border-color:var(--ok);}
-  .sh-pos{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; max-width:210px; margin-bottom:14px;}
-  .sh-pos button{
-    height:42px; border-radius:10px; border:1.5px solid var(--line);
-    background:#fff; font-size:1.1rem; cursor:pointer; color:var(--accent);
-  }
-  .sh-pos button:active{background:var(--primary);}
-  .prod-row .actions{flex-wrap:wrap; justify-content:flex-end; max-width:116px;}
-  .icon-btn.wa{border-color:#25D366; color:#1c9a4b;}
 </style>
 </head>
 <body>
@@ -577,76 +555,6 @@
       <button class="btn secondary" id="pf-cancel">Cancelar</button>
       <button class="btn" id="pf-save">Guardar</button>
     </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="share-modal">
-  <div class="modal">
-    <h2 id="sh-title">Imagen para compartir</h2>
-    <canvas class="sh-canvas" id="sh-canvas" width="1200" height="630"></canvas>
-    <p class="sh-hint">Así se verá la imagen al compartir.</p>
-
-    <div class="sh-status" id="sh-status"></div>
-
-    <div class="field">
-      <label>Foto a usar</label>
-      <div class="photo-strip" id="sh-photos"></div>
-    </div>
-
-    <div class="field">
-      <label>Formato de la tarjeta</label>
-      <select id="sh-format">
-        <option value="wide">Grande: foto arriba, ocupa todo el ancho</option>
-        <option value="square">Pequeña: foto cuadrada al lado del texto</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <label>Cómo acomodarla</label>
-      <select id="sh-mode">
-        <option value="contain">Foto completa con fondo de color</option>
-        <option value="cover">Llenar todo el cuadro (recorta los bordes)</option>
-      </select>
-    </div>
-
-    <div class="swatch-field" id="sh-bg-row">
-      <input type="color" id="sh-bg" value="#FDF8F3">
-      <div class="swatch-label"><div class="name">Color de fondo</div></div>
-    </div>
-
-    <div class="field">
-      <label>Posición de la foto</label>
-      <div class="sh-pos" id="sh-pos">
-        <button type="button" data-x="-100" data-y="-100" aria-label="Arriba izquierda">↖</button>
-        <button type="button" data-x="0" data-y="-100" aria-label="Arriba">⬆</button>
-        <button type="button" data-x="100" data-y="-100" aria-label="Arriba derecha">↗</button>
-        <button type="button" data-x="-100" data-y="0" aria-label="Izquierda">⬅</button>
-        <button type="button" data-x="0" data-y="0" aria-label="Centro">●</button>
-        <button type="button" data-x="100" data-y="0" aria-label="Derecha">➡</button>
-        <button type="button" data-x="-100" data-y="100" aria-label="Abajo izquierda">↙</button>
-        <button type="button" data-x="0" data-y="100" aria-label="Abajo">⬇</button>
-        <button type="button" data-x="100" data-y="100" aria-label="Abajo derecha">↘</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Tamaño de la foto</label>
-      <input type="range" class="sh-range" id="sh-zoom" min="40" max="300" value="100">
-    </div>
-    <div class="field">
-      <label>Ajuste fino izquierda / derecha</label>
-      <input type="range" class="sh-range" id="sh-x" min="-100" max="100" value="0">
-    </div>
-    <div class="field">
-      <label>Ajuste fino arriba / abajo</label>
-      <input type="range" class="sh-range" id="sh-y" min="-100" max="100" value="0">
-    </div>
-
-    <button class="btn" id="sh-save">Guardar imagen</button>
-    <button class="btn secondary" id="sh-share-fb" style="margin-top:10px;">📣 Compartir en Facebook</button>
-    <button class="btn secondary" id="sh-share-wa" style="margin-top:10px;">💬 Compartir en WhatsApp</button>
-    <button class="btn secondary" id="sh-reset" style="margin-top:10px; display:none;">Quitar imagen personalizada</button>
-    <button class="btn secondary" id="sh-close" style="margin-top:10px;">Cerrar</button>
   </div>
 </div>
 
@@ -934,9 +842,7 @@ function renderProductList(){
         </div>
       </div>
       <div class="actions">
-        <button class="icon-btn share" data-fb="${p.id}" title="Compartir normal en Facebook" aria-label="Compartir ${escapeHtml(p.name)} en Facebook">📣</button>
-        <button class="icon-btn wa" data-wa="${p.id}" title="Compartir normal en WhatsApp" aria-label="Compartir ${escapeHtml(p.name)} en WhatsApp">💬</button>
-        <button class="icon-btn" data-share="${p.id}" title="Personalizar imagen" aria-label="Personalizar imagen de ${escapeHtml(p.name)}">🎨</button>
+        <button class="icon-btn share" data-share="${p.id}" title="Compartir en Facebook" aria-label="Compartir ${escapeHtml(p.name)} en Facebook">📣</button>
         <button class="icon-btn" data-edit="${p.id}" aria-label="Editar ${escapeHtml(p.name)}">✎</button>
         <button class="icon-btn danger" data-del="${p.id}" aria-label="Eliminar ${escapeHtml(p.name)}">🗑</button>
       </div>
@@ -966,247 +872,19 @@ function productLink(p){
   return `${STORE_URL}?producto=${p.id}`;
 }
 
-/* ================== COMPARTIR (Facebook / WhatsApp) ================== */
-
-function shareLink(p, custom){
-  let l = `${SHARE_URL}?producto=${p.id}`;
-  if(custom && p.share_image_url) l += '&p=1';
-  l += `&v=${Date.now().toString(36)}`;
-  return l;
-}
-
-function shareMessage(p, link){
-  return `🌸 ${p.name} — $${Number(p.price).toLocaleString('es-CO')}. ¡Escríbenos! ${link}`;
-}
-
-async function doShareFacebook(p, custom){
+async function shareProductToFacebook(p){
   if(!p) return;
-  const link = shareLink(p, custom);
+  const link = `${SHARE_URL}?producto=${p.id}&v=${Date.now().toString(36)}`;
+  const mensaje = `🌸 Nuevo en Rincón de las Moñas: ${p.name} — $${Number(p.price).toLocaleString('es-CO')}. ¡Escríbenos! ${link}`;
+
   try{
-    await navigator.clipboard.writeText(shareMessage(p, link));
+    await navigator.clipboard.writeText(mensaje);
     toast('Mensaje copiado — pégalo en Facebook');
   }catch(e){
   }
+
   window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, '_blank');
 }
-
-function doShareWhatsApp(p, custom){
-  if(!p) return;
-  const link = shareLink(p, custom);
-  window.open(`https://wa.me/?text=${encodeURIComponent(shareMessage(p, link))}`, '_blank');
-}
-
-document.addEventListener('click', (e) => {
-  const fb = e.target.closest('[data-fb]');
-  if(fb){ doShareFacebook(PRODUCTS.find(p => p.id === fb.dataset.fb), false); return; }
-  const wa = e.target.closest('[data-wa]');
-  if(wa){ doShareWhatsApp(PRODUCTS.find(p => p.id === wa.dataset.wa), false); }
-});
-
-const SH = { product: null, photoUrl: null };
-const shImgCache = {};
-
-function shLoadImage(url){
-  return new Promise((resolve, reject) => {
-    if(shImgCache[url]) return resolve(shImgCache[url]);
-    const im = new Image();
-    im.crossOrigin = 'anonymous';
-    im.onload = () => { shImgCache[url] = im; resolve(im); };
-    im.onerror = () => reject(new Error('No se pudo cargar la foto'));
-    im.src = url;
-  });
-}
-
-function shSize(){
-  return document.getElementById('sh-format').value === 'square' ? [600, 600] : [1200, 630];
-}
-
-async function shDraw(){
-  const canvas = document.getElementById('sh-canvas');
-  const [W, H] = shSize();
-  if(canvas.width !== W || canvas.height !== H){
-    canvas.width = W;
-    canvas.height = H;
-  }
-  const ctx = canvas.getContext('2d');
-  const mode = document.getElementById('sh-mode').value;
-  const bg = document.getElementById('sh-bg').value;
-  const zoom = Number(document.getElementById('sh-zoom').value) / 100;
-  const sx = Number(document.getElementById('sh-x').value) / 100;
-  const sy = Number(document.getElementById('sh-y').value) / 100;
-
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-  if(!SH.photoUrl) return;
-
-  let im;
-  try{
-    im = await shLoadImage(SH.photoUrl);
-  }catch(e){
-    toast('No se pudo cargar la foto');
-    return;
-  }
-
-  const base = mode === 'cover'
-    ? Math.max(W / im.width, H / im.height)
-    : Math.min(W / im.width, H / im.height);
-  const scale = base * zoom;
-  const dw = im.width * scale;
-  const dh = im.height * scale;
-
-  // -1 = pegada a la izquierda/arriba, 0 = centro, 1 = pegada a la derecha/abajo
-  const x = ((W - dw) / 2) * (1 + sx);
-  const y = ((H - dh) / 2) * (1 + sy);
-
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-  ctx.drawImage(im, x, y, dw, dh);
-}
-
-function shRenderPhotos(){
-  const p = SH.product;
-  const strip = document.getElementById('sh-photos');
-  strip.innerHTML = '';
-  p.photos.forEach(ph => {
-    const div = document.createElement('div');
-    div.className = 'photo-thumb pick' + (ph.photo_url === SH.photoUrl ? ' selected' : '');
-    div.innerHTML = `<img src="${ph.photo_url}" alt="Foto del producto">`;
-    div.onclick = () => {
-      SH.photoUrl = ph.photo_url;
-      shRenderPhotos();
-      shDraw();
-    };
-    strip.appendChild(div);
-  });
-}
-
-function shUpdateStatus(){
-  const p = SH.product;
-  const st = document.getElementById('sh-status');
-  const resetBtn = document.getElementById('sh-reset');
-  if(p.share_image_url){
-    const f = p.share_image_format === 'square' ? 'pequeña (cuadrada)' : 'grande';
-    st.textContent = `✓ Hay una imagen personalizada guardada (tarjeta ${f}).`;
-    st.classList.add('ok');
-    resetBtn.style.display = 'block';
-  }else{
-    st.textContent = 'Aún no hay imagen personalizada guardada para este producto.';
-    st.classList.remove('ok');
-    resetBtn.style.display = 'none';
-  }
-}
-
-function shareProductToFacebook(p){
-  if(!p) return;
-  if(!p.photos || p.photos.length === 0){
-    toast('Este producto no tiene fotos');
-    return;
-  }
-  SH.product = p;
-  SH.photoUrl = p.photos[0].photo_url;
-  document.getElementById('sh-title').textContent = 'Imagen para compartir · ' + p.name;
-  document.getElementById('sh-format').value = 'wide';
-  document.getElementById('sh-mode').value = 'contain';
-  document.getElementById('sh-bg').value = '#FDF8F3';
-  document.getElementById('sh-bg-row').style.display = 'flex';
-  document.getElementById('sh-zoom').value = 100;
-  document.getElementById('sh-x').value = 0;
-  document.getElementById('sh-y').value = 0;
-  shRenderPhotos();
-  shUpdateStatus();
-  document.getElementById('share-modal').classList.add('open');
-  shDraw();
-}
-
-['sh-mode','sh-bg','sh-zoom','sh-x','sh-y','sh-format'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => {
-    if(id === 'sh-mode'){
-      document.getElementById('sh-bg-row').style.display =
-        document.getElementById('sh-mode').value === 'contain' ? 'flex' : 'none';
-    }
-    shDraw();
-  });
-});
-
-document.querySelectorAll('#sh-pos button').forEach(b => {
-  b.onclick = () => {
-    document.getElementById('sh-x').value = b.dataset.x;
-    document.getElementById('sh-y').value = b.dataset.y;
-    shDraw();
-  };
-});
-
-document.getElementById('sh-close').onclick = () => {
-  document.getElementById('share-modal').classList.remove('open');
-};
-
-function shNeedsSaved(){
-  if(!SH.product || !SH.product.share_image_url){
-    toast('Primero toca "Guardar imagen"');
-    return true;
-  }
-  return false;
-}
-
-document.getElementById('sh-share-fb').onclick = () => {
-  if(shNeedsSaved()) return;
-  doShareFacebook(SH.product, true);
-};
-
-document.getElementById('sh-share-wa').onclick = () => {
-  if(shNeedsSaved()) return;
-  doShareWhatsApp(SH.product, true);
-};
-
-document.getElementById('sh-save').onclick = async () => {
-  const p = SH.product;
-  if(!p) return;
-  const btn = document.getElementById('sh-save');
-  btn.disabled = true;
-  btn.textContent = 'Guardando…';
-  try{
-    await shDraw();
-    const blob = await new Promise((resolve, reject) => {
-      document.getElementById('sh-canvas').toBlob(
-        b => b ? resolve(b) : reject(new Error('No se pudo crear la imagen')),
-        'image/jpeg', 0.8
-      );
-    });
-    const format = document.getElementById('sh-format').value;
-    const path = `share/${p.id}-${Date.now()}.jpg`;
-    const { error: upErr } = await sb.storage.from('product-photos').upload(path, blob, { contentType: 'image/jpeg' });
-    if(upErr) throw upErr;
-    const { data: pub } = sb.storage.from('product-photos').getPublicUrl(path);
-    const { error: dbErr } = await sb.from('products')
-      .update({ share_image_url: pub.publicUrl, share_image_format: format })
-      .eq('id', p.id);
-    if(dbErr) throw dbErr;
-    p.share_image_url = pub.publicUrl;
-    p.share_image_format = format;
-    shUpdateStatus();
-    toast('Imagen guardada — ahora elige dónde compartir');
-  }catch(e){
-    console.error('Error guardando imagen para compartir:', e);
-    toast('No se pudo guardar la imagen');
-  }
-  btn.disabled = false;
-  btn.textContent = 'Guardar imagen';
-};
-
-document.getElementById('sh-reset').onclick = async () => {
-  const p = SH.product;
-  if(!p) return;
-  const { error } = await sb.from('products')
-    .update({ share_image_url: null, share_image_format: null })
-    .eq('id', p.id);
-  if(error){ toast('No se pudo quitar la imagen'); return; }
-  p.share_image_url = null;
-  p.share_image_format = null;
-  shUpdateStatus();
-  toast('Listo, quitada la imagen personalizada');
-};
-
-/* ================== FIN COMPARTIR ================== */
 
 function openProductModal(product){
   document.getElementById('product-modal-title').textContent = product ? 'Editar producto' : 'Nuevo producto';
