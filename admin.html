@@ -564,7 +564,8 @@ const SUPABASE_URL = 'https://djzqfnhbhwmdiftfmcsq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_qjYeH9YAwmZAd4rCoE_2xg_cg0yhUb5';
 
 const STORE_URL = 'https://geometrydashgd2789-stack.github.io/rincon-de-las-mo-as/';
-
+const SHARE_URL = 'https://monas-compartir.santiagomartinez29nov.workers.dev/';
+  
 const configured = SUPABASE_URL.startsWith('http');
 const sb = configured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
@@ -867,7 +868,7 @@ function renderProductList(){
 document.getElementById('new-product-btn').onclick = () => openProductModal(null);
 
 function productLink(p){
-  return `${STORE_URL}?producto=${p.id}`;
+  return `${SHARE_URL}?producto=${p.id}`;
 }
 
 async function shareProductToFacebook(p){
