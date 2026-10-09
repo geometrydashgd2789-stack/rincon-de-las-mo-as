@@ -846,8 +846,10 @@ footer .socials a{color:#fff;border-color:rgba(255,255,255,.75);}
 footer .legal-links{color:#fff;opacity:.85 !important;}
 footer .legal-links a{color:#fff !important;}
 /* La franja llega hasta el borde inferior: sin el espacio extra de la página original */
-body{padding-bottom:0 !important;}
-footer{margin-bottom:0;}
+/* El pie se queda al fondo de la pantalla cuando el catálogo es corto */
+body{padding-bottom:0 !important;display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;}
+body > footer{margin-top:auto;margin-bottom:0;}
+.catalog{padding-bottom:64px !important;}
 
 @media(prefers-reduced-motion:reduce){
   .hero-deco,.hero-inner > *{animation:none !important;}
